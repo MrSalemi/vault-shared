@@ -303,11 +303,15 @@ const SIMREAL =
   "get it working there, then build the same circuit for real on your bench. Show " +
   "both. The simulator is where mistakes are cheap.";
 
-// FLEX IS NOT DEFINED YET for electronics. Two guides already gesture at one --
-// 00 asks for Morse code S-O-S, 04 asks for a light show of your own design --
-// but there is no rule that says what a flex is or what it is worth. Until Ray
-// settles it, no guide uses {{GRADING}}.
+// Electronics has NO FLEX. A lab is worth 20 points delivered on time and 18
+// late, and there is nothing to earn beyond finishing it. Robotics is the
+// course where going further scores -- there a flex is 20 and all the work
+// without one is 19. The three electronics guides that used to offer a flex
+// (00's Morse code, 04's light show, 06's LED layout) now simply require the
+// thing, because a reward the grade does not pay is one a student notices.
 const GRADING =
-  "TODO: the electronics grading rule and what a flex is worth.";
+  "Each lab is worth 20 points when you finish it on time, and 18 points when " +
+  "it is late. Show both halves -- the simulation and the real circuit -- to " +
+  "get it checked off.";
 
 module.exports = {build, SIMREAL, GRADING};
