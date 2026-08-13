@@ -2,7 +2,7 @@
 # Build the printable guides from markdown, pad odd page counts, and report.
 # V05
 #
-#   ./build-all.sh            build every eNN.md that needs it
+#   ./build-all.sh            build every guide that needs it
 #   ./build-all.sh e02.md     build just one
 #
 # Add -d to copy the results into the unit's folder in Class Development.
@@ -39,27 +39,38 @@ set -e
 # Two folders, not one.
 #
 #   BUILDER  where build.js, parse.js and make.js live.
-#   HERE     where the guides live: the eNN.md, images/, and the built PDFs.
+#   HERE     where the guides live: the eNN.md or pNN.md, images/, course.js,
+#            and the built PDFs.
 #
-# They are the same folder today. They will not be once the builder is a
-# submodule shared with nhsrobotics, so nothing below may assume it. Run this
-# script from the folder holding the guides; if you run it from the builder
-# itself and the guides are there too, that still works.
+# They are separate folders: the builder is a submodule shared by nhsengineering
+# and nhsrobotics, so nothing below may assume it sits beside the guides. Run
+# this script from the folder holding the guides. The old layout, where they
+# were one folder, still works.
 BUILDER=$(cd "$(dirname "$0")" && pwd)
 HERE=${GUIDE_SRC:-$(pwd)}
-if ! ls "$HERE"/e*.md >/dev/null 2>&1 && ls "$BUILDER"/e*.md >/dev/null 2>&1; then
+# A guide is a letter and two digits: e07.md here, p07.md in robotics. Never
+# *.md, which would sweep up a README or a note left in the folder.
+GLOB='[a-z][0-9][0-9].md'
+if ! ls "$HERE"/$GLOB >/dev/null 2>&1 && ls "$BUILDER"/$GLOB >/dev/null 2>&1; then
     HERE=$BUILDER          # old layout: guides sit beside the builder
 fi
 cd "$HERE"
 
-# Where the finished guides go. Override with GUIDES=... if needed.
-if [ -z "$GUIDES" ]; then
-    for candidate in \
-        "$HOME/Library/CloudStorage/GoogleDrive-rdsalemi@gmail.com/My Drive/Teaching/Class Development/Engineering/Projects/Unit 01—Electronics" \
-        /sessions/*/mnt/"Class Development"/Engineering/Projects/"Unit 01—Electronics"
+# Where the finished guides go. This is course-specific, so it is not in the
+# builder: put it in deploy.txt beside the guides, as a path relative to the
+# Class Development folder. Override the whole thing with GUIDES=... if needed.
+if [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
+    rel=$(grep -v '^[[:space:]]*#' deploy.txt | grep -v '^[[:space:]]*$' | head -1)
+    for root in \
+        "$HOME/Library/CloudStorage/GoogleDrive-rdsalemi@gmail.com/My Drive/Teaching/Class Development" \
+        /sessions/*/mnt/"Class Development"
     do
-        if [ -d "$candidate" ]; then GUIDES="$candidate"; break; fi
+        if [ -d "$root/$rel" ]; then GUIDES="$root/$rel"; break; fi
     done
+    if [ -z "$GUIDES" ]; then
+        echo "ERROR: deploy.txt names '$rel' and no Class Development has it" >&2
+        exit 1
+    fi
 fi
 DEPLOY=false
 FORCE=false
@@ -75,11 +86,13 @@ done
 # Was a guide named on the command line? If not this is a full run, and a full
 # run is the only one that touches extras.txt.
 NAMED=true
-if [ ${#FILES[@]} -eq 0 ]; then FILES=(e*.md); NAMED=false; fi
+if [ ${#FILES[@]} -eq 0 ]; then FILES=($GLOB); NAMED=false; fi
 
 # Change any of these and every guide is stale: they decide what lands on the
-# page, and the shared SAVE / PARTA / GRADING text lives in build.js.
+# page. course.js counts too -- it holds the course's {{GRADING}} and the rest,
+# and it lives here with the guides, not in the builder.
 BUILDER_FILES=("$BUILDER/build.js" "$BUILDER/parse.js" "$BUILDER/make.js")
+[ -f course.js ] && BUILDER_FILES+=("course.js")
 
 # node writes the .docx, LibreOffice paginates it, poppler counts the pages.
 # All three have to be on PATH, and when one is not this script used to die

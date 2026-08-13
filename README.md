@@ -1,73 +1,126 @@
 # Guide Builder
 
-Generates printed lab guides. **The guide is a PDF.** A Word file is built on
-the way there, in a temp folder, and deleted.
+Turns a folder of markdown into printed lab guides. **The guide is a PDF.** A
+Word file is built on the way there, in a temp folder, and deleted — no office
+suite is needed to make a guide or to print one, and there is no editable copy
+to hand-edit by mistake. The markdown is the only copy anyone can edit. That
+used to be a rule people had to remember; now it is just true.
 
 **This repo is shared.** It is a submodule of both `nhsengineering` and
-`nhsrobotics`, and each course pins its own commit. It holds no guides and no
-pictures — those live with the course, and the builder is told where they are.
+`nhsrobotics`, and each course pins its own commit. It holds no guides, no
+pictures and no course text — all of that lives with the course, and the builder
+is told where to find it.
 
-```bash
-cd <the folder the guides are in>
-/path/to/builder/build-all.sh          # build what is stale
-/path/to/builder/build-all.sh -f       # rebuild everything
+*V02*
+
+## What a guides folder looks like
+
+The builder is run **from the folder the guides are in**, and everything it
+needs is there:
+
+```
+guides/unit01/
+  e00.md … e09.md      one guide per file, eNN or pNN
+  images/              every picture the guides use
+  course.js            what this course's {{PLACEHOLDERS}} say   (required)
+  extras.txt           things that ship with the guides          (optional)
+  E00_….pdf            the built guides, gitignored
 ```
 
-What is course-specific lives in the course, not here: the `SIMREAL` and
-`GRADING` text, and the deploy folder. A change made for one course lands in
-the other the moment its pin moves, so **bumping a pin means rebuilding and
-eyeballing both courses.** Pagination is the shared failure mode.
-
-*V01*
-
-## Where these came from
-
-The guides were Google Docs. `tools/docx_to_md.py` turned the exported `.docx`
-into the markdown here and pulled the 59 pictures into `images/`. That import is
-**raw** — it carries the words and the pictures across faithfully, and nothing
-else. The headings, the voice and the WORK/FLEX shape are still to be written.
-
-The originals are still in Drive at
-`Class Development/Engineering/Projects/Unit 01—Electronics`. Nothing has been
-deleted.
-
-## Build
-
 ```bash
-npm install docx          # once
-./build-all.sh            # build every guide that needs it
-./build-all.sh e02.md     # build just one
-./build-all.sh -d         # build and copy into Project Guides
-./build-all.sh -f         # rebuild everything, current or not
-node test-build.js        # check the builder
+cd guides/unit01
+../../builder/build-all.sh            # build every guide that needs it
+../../builder/build-all.sh e02.md     # build just one
+../../builder/build-all.sh -d         # build and deploy
+../../builder/build-all.sh -f         # rebuild everything, current or not
+node ../../builder/test-build.js      # check the builder against these guides
 ```
 
 A guide is only rebuilt when its markdown, one of its pictures, or the builder
-itself is newer than the PDF. Page counts are measured with LibreOffice, which
-is slow, so this matters.
+itself is newer than the PDF. Page counts are measured by running the file
+through LibreOffice, which is slow, so this is the difference between a minute
+and a second. Odd page counts are padded to even, because printing is
+double-sided.
 
-Built guides are not committed. Deployed copies go to
-`Class Development/Engineering/Project Guides/`.
+Needs `node`, `soffice` (LibreOffice) and `pdftoppm` (Poppler) on `PATH`;
+`build-all.sh` checks and names whichever is missing.
 
-## How this differs from the robotics builder
+## course.js
 
-Same code, separate copy — Engineering is its own course and its guides answer
-to nothing in Robotics.
+The one thing that genuinely differs between courses is the text a guide prints
+for its placeholders — one course grades a circuit that works, the other grades
+a robot and a worksheet. So the builder ships none of it. Each guides folder
+exports a function of the guide's frontmatter:
 
-- Guides are `eNN.md`, not `pNN.md`.
-- The shared strings are different. Robotics has `{{SAVE}}`, `{{PARTA}}` and
-  `{{GRADING}}`. Engineering has `{{SIMREAL}}` — simulate it, then build it —
-  and a `{{GRADING}}` that is **not written yet**, because what a flex is worth
-  in electronics has not been decided.
-
-Everything else — the markdown it understands, the print rules, the link
-handling — matches `nhsrobotics/guide_builder/README.md`.
-
-## Re-importing a Google Doc
-
-```bash
-python3 ../tools/docx_to_md.py "Some Doc.docx" . e05
+```js
+module.exports = meta => ({
+  GRADING: "This lab is worth 20 points…",
+  SAVE:    `…save it as /workspace/p${meta.number}.py…`,
+});
 ```
 
-Pictures land in `images/` named after the slug, in the order they appear, and
-JPEGs are re-saved as PNG because the builder refuses anything else.
+`{{GRADING}}` in the markdown is replaced by that string. Taking `meta` means a
+value can be built from the guide's own `number`, `scaffold` or `title`. A
+guides folder without a `course.js` is refused rather than guessed at.
+
+## extras.txt
+
+A unit usually has one or two things that ship with the guides but are not
+guides — a checkoff sheet, a worksheet. One per line:
+
+```
+Completed Electronics Projects.docx :: node tracker.js
+```
+
+Left of `::` is the file, right is the command that makes it, run in the guides
+folder. It is remade when the file is missing or the command's script is newer,
+and it deploys with everything else under `-d`. Drop the `::` half for a file
+that is not generated and only needs copying. Naming a single guide on the
+command line skips extras.
+
+## The markdown it understands
+
+| Written | Becomes |
+|---|---|
+| `# Heading` | part heading |
+| `## Heading` | section heading |
+| `> text` | grey italic note |
+| `**whole paragraph**` | bold lead line |
+| `- item` / `1. item` | bullet / numbered list |
+| ` ``` ` fence | code block, monospace, boxed |
+| `![[thing.png]]` | picture, resolved against `images/` |
+| `![alt](images/thing.png)` | the same thing |
+| `\| a \| b \|` + separator | table, first row is the header |
+| `` `code` `` `**bold**` `*italic*` | inline runs |
+| `[label](target)`, `[[target\|label]]` | **the label only** |
+| `{{NAME}}` | whatever `course.js` says |
+
+Frontmatter carries `out` (the filename to write), `version`, `title`, `number`,
+and anything else a course's `course.js` wants to read.
+
+## Rules that bite
+
+- **A link prints as its label and nothing else.** A guide is read on paper,
+  where a target is worthless and a filename is noise. A *bare* link to another
+  guide — `[[p07]]` — is refused by the build, because "p07" is a name no
+  student has ever seen. Write `[[p07|Project 07]]`.
+- **Pictures must be real PNGs.** The header is read and anything else refused.
+- **A picture is capped at 6.5 × 4.5 inches**, proportions kept. Without the
+  height cap a portrait screenshot renders seven inches tall and owns a sheet.
+  In a table cell the height cap is 1.56 inches instead.
+- **A picture does not glue itself to a following picture or heading.** Both
+  make one unbreakable block, and a block taller than a page shunts the whole
+  run to the next sheet and leaves the current one nearly empty.
+- **`***bold italic***` is not in the grammar** — only `**bold**` and
+  `*italic*` separately. Triple asterisks print as literal asterisks.
+- **A table's first row is its header.** A parts list whose first row is really
+  data needs a header written for it.
+- **Length costs sheets, not pages.** 3 and 4 pages are both 2 sheets. Only an
+  even-to-odd crossing matters.
+
+## Changing this repo
+
+A change lands in the other course the moment its pin moves. **Bumping a pin
+means rebuilding and eyeballing the guides in both courses** — pagination is the
+shared failure mode and it fails quietly. `test-build.js` covers the link rules,
+the placeholder contract and build determinism, but it cannot see a page.

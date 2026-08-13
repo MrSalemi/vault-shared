@@ -377,28 +377,10 @@ async function build(outPath, ver, blocks, contentDir) {
   console.log("wrote", outPath, ver);
 }
 
-// Shared text, same in every guide.
-const SIMREAL =
-  "Every lab has two halves. Build the circuit in the Tinkercad simulator first and " +
-  "get it working there, then build the same circuit for real on your bench. Show " +
-  "both. The simulator is where mistakes are cheap.";
+// No course text lives here. The words a guide prints for {{GRADING}} or
+// {{SAVE}} belong to the course, and they are the one thing that genuinely
+// differs between Engineering and Robotics -- one grades a circuit that works,
+// the other grades a robot and a worksheet. Each guides folder has a course.js
+// that supplies them; see make.js.
 
-// Electronics has NO FLEX. A lab is 20 points on time, 18 if it is late or if
-// it came back for a redo, and there is nothing to earn beyond finishing it.
-// Robotics is the course where going further scores -- there a flex is 20 and
-// all the work without one is 19. The three electronics guides that used to
-// offer a flex (00's Morse code, 04's light show, 06's LED layout) now simply
-// require the thing, because a reward the grade does not pay is one a student
-// notices.
-//
-// A redo is NOT a zero. It comes back until it is right and then scores 18, the
-// same as late, so the only way to score nothing is never to finish. Every
-// guide prints this, from {{GRADING}}.
-const GRADING =
-  "This lab is worth 20 points. Show both halves, the simulation and the real " +
-  "circuit, to get it checked off. A lab handed in after its due date is worth " +
-  "18. A lab that is not working yet comes back to you as a redo, as many times " +
-  "as it takes, and is worth 18 once it is right. The only way to score zero is " +
-  "not to finish it.";
-
-module.exports = {build, SIMREAL, GRADING};
+module.exports = {build};

@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const {parse} = require('./parse');
-const {build, SIMREAL, GRADING} = require('./build');
+const {build} = require('./build');
 
 const mdPath = process.argv[2];
 if (!mdPath) {
@@ -52,10 +52,31 @@ if (naked.length) {
   process.exit(1);
 }
 
-// Frontmatter is read twice: once to learn the project number, once for real
-// with all placeholders filled in.
+// The words behind {{GRADING}}, {{SAVE}} and the rest belong to the course, not
+// the builder. Each guides folder has a course.js taking the guide's frontmatter
+// and returning what its placeholders stand for:
+//
+//   module.exports = meta => ({
+//     GRADING: "This lab is worth 20 points...",
+//     SAVE: `...save it as /workspace/p${meta.number}.py...`,
+//   });
+//
+// This is the whole reason the builder can be shared. Engineering grades a
+// circuit that works; Robotics grades a robot and a worksheet, and builds its
+// SAVE text from the guide's own number and scaffold. Neither belongs in code
+// the other course also runs.
+const coursePath = path.join(contentDir, 'course.js');
+if (!fs.existsSync(coursePath)) {
+  console.error(`${mdPath}: no course.js in ${contentDir}`);
+  console.error("it supplies the {{PLACEHOLDER}} text for this course's guides.");
+  process.exit(1);
+}
+const course = require(coursePath);
+
+// Frontmatter is read twice: once so course.js can see the project number and
+// scaffold, once for real with all placeholders filled in.
 const [meta0] = parse(src);
-const vars = {SIMREAL: SIMREAL, GRADING: GRADING};
+const vars = course(meta0);
 
 const [meta, blocks] = parse(src, vars);
 build(meta.out, meta.version, blocks, contentDir);

@@ -19,7 +19,7 @@ const JSZip = require('jszip');
 const MAKE = path.join(__dirname, 'make.js');
 const GUIDES = path.resolve(process.argv[2] || process.cwd());
 
-if (!fs.readdirSync(GUIDES).some(f => /^e\d+\.md$/.test(f))) {
+if (!fs.readdirSync(GUIDES).some(f => /^[a-z]\d+\.md$/.test(f))) {
   console.error(`no guides in ${GUIDES}`);
   console.error('run this from a unit folder, or name one:');
   console.error('  cd guides/unit01 && node ../../builder/test-build.js');
@@ -71,6 +71,9 @@ function scratchUnit() {
   for (const name of ['e01', 'e02', 'e03']) {
     fs.writeFileSync(path.join(w, name + '.md'), '');
   }
+  // Every guides folder must have one; the builder refuses to guess the text.
+  fs.writeFileSync(path.join(w, 'course.js'),
+                   "module.exports = () => ({});\n");
   const from = path.join(GUIDES, 'images');
   const png = fs.existsSync(from) && fs.readdirSync(from).find(f => f.endsWith('.png'));
   if (png) {
@@ -97,7 +100,7 @@ async function main() {
   // --- Every real guide still builds ------------------------------------
   console.log('Every guide builds');
   const work = scratch();
-  for (const md of fs.readdirSync(GUIDES).filter(f => /^e\d+\.md$/.test(f)).sort()) {
+  for (const md of fs.readdirSync(GUIDES).filter(f => /^[a-z]\d+\.md$/.test(f)).sort()) {
     const r = build(work, path.join(GUIDES, md));
     check(md, r.ok, r.err.trim());
   }
@@ -122,9 +125,18 @@ async function main() {
     check("an Obsidian image embed resolves to the guide's images/", /r:embed|<a:blip/.test(xml));
   }
 
+  // --- A missing course.js is refused, not guessed -----------------------
+  console.log('\nA guides folder with no course.js is refused');
+  const bare = scratch();
+  const bareSrc = path.join(bare, 'g.md');
+  fs.writeFileSync(bareSrc, guide('Nothing special.'));
+  const rb0 = build(bare, bareSrc);
+  check('build fails', !rb0.ok);
+  check('the message names course.js', /course\.js/.test(rb0.err), rb0.err.trim());
+
   // --- A bare link prints its target ------------------------------------
   console.log('\nA bare link prints its target, which is usually what you want');
-  const w5 = scratch();
+  const w5 = scratchUnit();
   const src5 = path.join(w5, 'g.md');
   fs.writeFileSync(src5, guide('You will find what you need in [[robot_setup]].'));
   const r5 = build(w5, src5);
@@ -165,7 +177,7 @@ async function main() {
   // every part a reader ever sees must be.
   console.log('\nBuilding twice gives the same document');
   const w6 = scratch(), w7 = scratch();
-  const one = fs.readdirSync(GUIDES).filter(f => /^e\d+\.md$/.test(f)).sort()[0];
+  const one = fs.readdirSync(GUIDES).filter(f => /^[a-z]\d+\.md$/.test(f)).sort()[0];
   const ra2 = build(w6, path.join(GUIDES, one));
   const rb2 = build(w7, path.join(GUIDES, one));
   check('both build', ra2.ok && rb2.ok, (ra2.err + rb2.err).trim());
