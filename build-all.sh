@@ -1,12 +1,24 @@
 #!/bin/bash
 # Build the printable guides from markdown, pad odd page counts, and report.
-# V04
+# V05
 #
 #   ./build-all.sh            build every eNN.md that needs it
 #   ./build-all.sh e02.md     build just one
 #
 # Add -d to copy the results into the unit's folder in Class Development.
 # Add -f to rebuild even the guides that are already up to date.
+#
+# A unit usually has one or two things that ship with the guides but are not
+# guides -- a checkoff sheet, a worksheet. Those are listed in extras.txt beside
+# the guides, one per line:
+#
+#   Completed Electronics Projects.docx :: node tracker.js
+#
+# The part before :: is the file, the part after is the command that makes it,
+# run in the guides' folder. It is remade when it is missing or when the first
+# file named in its command is newer, and with -d it deploys with everything
+# else. A line with no :: is a file that is not generated at all and only needs
+# deploying.
 #
 # The guide you print is a PDF. Word is not involved anywhere: the .docx is an
 # intermediate the PDF is made from, it is written to a temp folder, and it is
@@ -60,7 +72,10 @@ for arg in "$@"; do
         *)  FILES+=("$arg") ;;
     esac
 done
-if [ ${#FILES[@]} -eq 0 ]; then FILES=(e*.md); fi
+# Was a guide named on the command line? If not this is a full run, and a full
+# run is the only one that touches extras.txt.
+NAMED=true
+if [ ${#FILES[@]} -eq 0 ]; then FILES=(e*.md); NAMED=false; fi
 
 # Change any of these and every guide is stale: they decide what lands on the
 # page, and the shared SAVE / PARTA / GRADING text lives in build.js.
@@ -178,6 +193,54 @@ for md in "${FILES[@]}"; do
         fi
     fi
 done
+
+# The things that ship with the guides but are not guides. Only done on a full
+# run: asking for one guide by name should not drag the checkoff sheet along.
+if [ "$NAMED" = false ]; then
+    if [ -f extras.txt ]; then
+        while IFS= read -r entry || [ -n "$entry" ]; do
+            case "$entry" in ""|\#*) continue ;; esac
+            target=${entry%%::*}
+            recipe=${entry#*::}
+            [ "$recipe" = "$entry" ] && recipe=""      # no :: means not generated
+            # Trim the spaces around each half.
+            target=$(printf '%s' "$target" | sed 's/[[:space:]]*$//; s/^[[:space:]]*//')
+            recipe=$(printf '%s' "$recipe" | sed 's/[[:space:]]*$//; s/^[[:space:]]*//')
+
+            if [ -n "$recipe" ]; then
+                # The generator is the first thing in the recipe that is a file
+                # here -- `node tracker.js` depends on tracker.js.
+                gen=""
+                for word in $recipe; do
+                    if [ -f "$word" ]; then gen=$word; break; fi
+                done
+                stale=false
+                [ ! -f "$target" ] && stale=true
+                [ -n "$gen" ] && [ "$gen" -nt "$target" ] && stale=true
+                [ "$FORCE" = true ] && stale=true
+                if [ "$stale" = true ]; then
+                    sh -c "$recipe" > /dev/null
+                    printf "%-38s remade\n" "$target"
+                    built=$((built + 1))
+                else
+                    printf "%-38s up to date\n" "$target"
+                    skipped=$((skipped + 1))
+                fi
+            fi
+
+            if [ ! -f "$target" ]; then
+                echo "ERROR: extras.txt lists $target and nothing made it" >&2
+                exit 1
+            fi
+            if [ "$DEPLOY" = true ]; then
+                if [ ! -f "$GUIDES/$target" ] || [ "$target" -nt "$GUIDES/$target" ]; then
+                    cp "$target" "$GUIDES/"
+                    printf "%-38s -> deployed\n" "$target"
+                fi
+            fi
+        done < extras.txt
+    fi
+fi
 
 echo "$built built, $skipped already current"
 if [ "$DEPLOY" = true ]; then echo "deploy target: $GUIDES"; fi
