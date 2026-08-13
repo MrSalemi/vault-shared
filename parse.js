@@ -1,5 +1,5 @@
 // Markdown -> block list for build.js.
-// V02
+// V03
 //
 // Supported:
 //   ---            frontmatter (out, version, title)
@@ -12,6 +12,7 @@
 //   ```            fenced code block -> code
 //   ![alt](file)   image, own line   -> image
 //   ![[file]]      image, own line   -> image  (Obsidian's embed)
+//   | a | b |      table             -> table
 //   text           paragraph         -> p
 //
 // Placeholders {{SAVE}}, {{PARTA}}, {{GRADING}} are substituted before parsing.
@@ -75,6 +76,37 @@ function parse(src, vars = {}) {
     // name against images/.
     const wimg = line.trim().match(/^!\[\[([^\]|]+?)(?:\|([^\]]*))?\]\]$/);
     if (wimg) { blocks.push(["image", {alt: wimg[2] || "", src: wimg[1]}]); i++; continue; }
+
+    // A table: a row of cells, a separator row, then the body. This is the
+    // shape Obsidian writes and the shape the Google Docs importer produces.
+    //
+    //   | Part                | Picture         |
+    //   | ------------------- | --------------- |
+    //   | Arduino UNO         | ![[e01_05.png]] |
+    //   | 1000Ω (1k) Resistor |                 |
+    //
+    // A cell may be empty -- the resistor row is deliberately missing its
+    // picture -- and a cell holding nothing but an image embed becomes a
+    // picture, sized to the column. The separator row sets alignment per
+    // column: ---, :---, ---:, or :---:.
+    //
+    // The row before the separator is the header, as markdown says. A table
+    // whose first row is really data needs a header written for it; the
+    // importer leaves them without one because markdown has nowhere else to
+    // put a first row.
+    if (line.trim().startsWith("|") && i + 1 < lines.length &&
+        /^\|?[\s:|-]*-[\s:|-]*\|?$/.test(lines[i + 1].trim()) &&
+        lines[i + 1].includes("-")) {
+      const cut = s => s.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.trim());
+      const head = cut(line);
+      const align = cut(lines[i + 1]).map(spec =>
+        /^:-+:$/.test(spec) ? "center" : /-+:$/.test(spec) ? "right" : "left");
+      i += 2;
+      const body = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) { body.push(cut(lines[i])); i++; }
+      blocks.push(["table", {head, align, body}]);
+      continue;
+    }
 
     // A paragraph that is entirely bold is the lead line.
     const bold = line.trim().match(/^\*\*(.+)\*\*$/);

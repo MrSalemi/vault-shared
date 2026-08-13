@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const {Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow,
        TableCell, WidthType, ShadingType, LevelFormat, AlignmentType,
-       Footer, PageNumber, BorderStyle, PageBreak, ImageRun} = d;
+       Footer, PageNumber, BorderStyle, PageBreak, ImageRun, VerticalAlign} = d;
 
 const CODE_BORDER = "9A9A9A";
 const PAGE_W = 9360;
@@ -130,6 +130,8 @@ function pngSize(buf) {
 }
 
 function imageBlock(spec, contentDir, o = {}) {
+  const capW = o.maxWidth || TEXT_COLUMN_PX;
+  const capH = o.maxHeight || TEXT_ROW_PX;
   // Obsidian's ![[thing.png]] carries a bare filename, because the vault finds
   // pictures by name. The builder needs a path, so a bare name falls back to
   // images/ -- which is where every guide picture lives anyway.
@@ -148,9 +150,9 @@ function imageBlock(spec, contentDir, o = {}) {
   if (!size) {
     throw new Error("not a readable PNG: " + spec.src);
   }
-  const scale = Math.min(1, TEXT_COLUMN_PX / size.width, TEXT_ROW_PX / size.height);
+  const scale = Math.min(1, capW / size.width, capH / size.height);
   return new Paragraph({
-    alignment: AlignmentType.CENTER,
+    alignment: o.align || AlignmentType.CENTER,
     ...(o.keepNext === false ? {} : {keepNext: true}),
     spacing: {before: 80, after: 160},
     children: [new ImageRun({
@@ -163,6 +165,78 @@ function imageBlock(spec, contentDir, o = {}) {
         height: Math.round(size.height * scale),
       },
     })],
+  });
+}
+
+// A table. Columns share the text width evenly, because the tables in these
+// guides are parts lists -- a name and a picture -- and nothing has asked for
+// more control than that yet.
+//
+// A cell holding nothing but a picture becomes that picture, scaled to fit its
+// column. A cell may also be empty: the resistor row in a parts table has no
+// picture on purpose, and an empty cell has to stay empty rather than collapse.
+const TABLE_BORDER = "808080";
+
+function tableBlock(spec, contentDir) {
+  const cols = Math.max(spec.head.length, ...spec.body.map(r => r.length));
+  const width = Math.floor(PAGE_W / cols);
+  const widths = Array(cols).fill(width);
+  widths[cols - 1] += PAGE_W - width * cols;        // absorb the rounding
+
+  const line = {style: BorderStyle.SINGLE, size: 4, color: TABLE_BORDER};
+  const ALIGN = {left: AlignmentType.LEFT, right: AlignmentType.RIGHT,
+                 center: AlignmentType.CENTER};
+
+  const cellOf = (text, at, o = {}) => {
+    const align = ALIGN[spec.align[at] || "left"] || AlignmentType.LEFT;
+    // The picture gets the column minus the cell's own margins. 15 dxa to the
+    // pixel at 96 dpi, which is the unit ImageRun wants. Height is capped much
+    // harder than width: a parts list wants a thumbnail you can match against
+    // a bin, and letting a portrait photo run the full column width makes a
+    // three-inch-tall row that pushes the table onto another sheet.
+    const room = Math.floor((widths[at] - 220) / 15);
+    const tall = 150;                                 // 1.56in
+    const embed = text.match(/^!\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]$/) ||
+                  text.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+    let children;
+    if (embed) {
+      children = [imageBlock({alt: "", src: embed[1]}, contentDir,
+                             {keepNext: false, maxWidth: room, maxHeight: tall,
+                              align})];
+    } else if (!text) {
+      children = [new Paragraph({children: [], spacing: {before: 20, after: 20}})];
+    } else {
+      children = [new Paragraph({
+        alignment: align,
+        spacing: {before: 20, after: 20},
+        children: runs(text, o.bold ? {bold: true} : {}),
+      })];
+    }
+    return new TableCell({
+      width: {size: widths[at], type: WidthType.DXA},
+      verticalAlign: VerticalAlign.CENTER,
+      margins: {top: 60, bottom: 60, left: 110, right: 110},
+      borders: {top: line, bottom: line, left: line, right: line},
+      ...(o.bold ? {shading: {type: ShadingType.CLEAR, fill: "EFEFEF"}} : {}),
+      children,
+    });
+  };
+
+  const pad = row => row.concat(Array(cols - row.length).fill(""));
+  const rows = [new TableRow({
+    tableHeader: true,
+    children: pad(spec.head).map((c, at) => cellOf(c, at, {bold: true})),
+  })];
+  for (const row of spec.body) {
+    rows.push(new TableRow({children: pad(row).map((c, at) => cellOf(c, at))}));
+  }
+
+  return new Table({
+    columnWidths: widths,
+    width: {size: PAGE_W, type: WidthType.DXA},
+    borders: {top: line, bottom: line, left: line, right: line,
+              insideHorizontal: line, insideVertical: line},
+    rows,
   });
 }
 
@@ -213,6 +287,12 @@ function render(blocks, contentDir) {
     } else if (kind === "image") {
       out.push(imageBlock(payload, contentDir,
                           {keepNext: !(nextIsImage || nextStartsSection)}));
+    } else if (kind === "table") {
+      out.push(tableBlock(payload, contentDir));
+      // Same reason as the code block below: Word butts the next text straight
+      // against a table.
+      out.push(new Paragraph({children: [new TextRun({text: "", size: 8})],
+                              spacing: {after: 60, line: 120}}));
     } else if (kind === "code") {
       out.push(codeBlock(payload));
       // Word butts text straight against a table, so a spacer is needed. Keep
@@ -303,15 +383,22 @@ const SIMREAL =
   "get it working there, then build the same circuit for real on your bench. Show " +
   "both. The simulator is where mistakes are cheap.";
 
-// Electronics has NO FLEX. A lab is worth 20 points delivered on time and 18
-// late, and there is nothing to earn beyond finishing it. Robotics is the
-// course where going further scores -- there a flex is 20 and all the work
-// without one is 19. The three electronics guides that used to offer a flex
-// (00's Morse code, 04's light show, 06's LED layout) now simply require the
-// thing, because a reward the grade does not pay is one a student notices.
+// Electronics has NO FLEX. A lab is 20 points on time, 18 if it is late or if
+// it came back for a redo, and there is nothing to earn beyond finishing it.
+// Robotics is the course where going further scores -- there a flex is 20 and
+// all the work without one is 19. The three electronics guides that used to
+// offer a flex (00's Morse code, 04's light show, 06's LED layout) now simply
+// require the thing, because a reward the grade does not pay is one a student
+// notices.
+//
+// A redo is NOT a zero. It comes back until it is right and then scores 18, the
+// same as late, so the only way to score nothing is never to finish. Every
+// guide prints this, from {{GRADING}}.
 const GRADING =
-  "Each lab is worth 20 points when you finish it on time, and 18 points when " +
-  "it is late. Show both halves -- the simulation and the real circuit -- to " +
-  "get it checked off.";
+  "This lab is worth 20 points. Show both halves, the simulation and the real " +
+  "circuit, to get it checked off. A lab handed in after its due date is worth " +
+  "18. A lab that is not working yet comes back to you as a redo, as many times " +
+  "as it takes, and is worth 18 once it is right. The only way to score zero is " +
+  "not to finish it.";
 
 module.exports = {build, SIMREAL, GRADING};
