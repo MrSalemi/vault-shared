@@ -66,6 +66,35 @@ if [ ${#FILES[@]} -eq 0 ]; then FILES=(e*.md); fi
 # page, and the shared SAVE / PARTA / GRADING text lives in build.js.
 BUILDER_FILES=("$BUILDER/build.js" "$BUILDER/parse.js" "$BUILDER/make.js")
 
+# node writes the .docx, LibreOffice paginates it, poppler counts the pages.
+# All three have to be on PATH, and when one is not this script used to die
+# saying nothing at all: the conversion runs in a subshell with its output
+# redirected, so `set -e` ended the run with a blank screen. Check up front and
+# name what is missing.
+#
+# The macOS installer does not put soffice on PATH, so look where it lands.
+if ! command -v soffice >/dev/null 2>&1 \
+   && [ -x "/Applications/LibreOffice.app/Contents/MacOS/soffice" ]; then
+    PATH="/Applications/LibreOffice.app/Contents/MacOS:$PATH"
+fi
+missing=()
+for tool in node soffice pdftoppm; do
+    command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
+if [ ${#missing[@]} -ne 0 ]; then
+    echo "ERROR: not on PATH: ${missing[*]}" >&2
+    echo >&2
+    for tool in "${missing[@]}"; do
+        case "$tool" in
+            node)     echo "  node      brew install node" >&2 ;;
+            soffice)  echo "  soffice   LibreOffice, from libreoffice.org or" >&2
+                      echo "            brew install --cask libreoffice" >&2 ;;
+            pdftoppm) echo "  pdftoppm  brew install poppler" >&2 ;;
+        esac
+    done
+    exit 1
+fi
+
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -108,9 +137,11 @@ for md in "${FILES[@]}"; do
         rm -f "$WORK"/*
         ( cd "$WORK" && node "$BUILDER/make.js" "$HERE/$md" > /dev/null )
 
-        # Count pages off a first conversion.
+        # Count pages off a first conversion. A failure here must NOT take the
+        # script down through `set -e` -- it would do so having printed nothing,
+        # and the real complaint is the "produced no PDF" check further down.
         ( cd "$WORK" && soffice --headless --convert-to pdf "$out" > /dev/null 2>&1 \
-            && pdftoppm -jpeg -r 30 "$pdf" pg )
+            && pdftoppm -jpeg -r 30 "$pdf" pg ) || true
         pages=$(ls "$WORK"/pg-*.jpg 2>/dev/null | wc -l | tr -d ' ')
         rm -f "$WORK"/pg-*.jpg
 
