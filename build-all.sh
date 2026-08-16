@@ -42,9 +42,10 @@ set -e
 #   HERE     where the guides live: the eNN.md or pNN.md, images/, course.js,
 #            and the built PDFs.
 #
-# They are separate folders: the builder is a submodule shared by nhsengineering
-# and nhsrobotics, so nothing below may assume it sits beside the guides. Run
-# this script from the folder holding the guides. The old layout, where they
+# They are separate folders: the builder is a submodule (checked out as
+# shared/) used by nhsengineering, nhsrobotics, advrobotics, and any future
+# vault, so nothing below may assume it sits beside the guides. Run this
+# script from the folder holding the guides. The old layout, where they
 # were one folder, still works.
 BUILDER=$(cd "$(dirname "$0")" && pwd)
 HERE=${GUIDE_SRC:-$(pwd)}

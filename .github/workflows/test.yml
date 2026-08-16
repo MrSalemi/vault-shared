@@ -1,0 +1,22 @@
+name: test
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # test-fixtures/ is synthetic content for CI only, not a real course's
+      # guides -- see test-fixtures/course.js. Builds .docx only, no
+      # LibreOffice/soffice involved, so this stays fast and needs no
+      # extra runner setup.
+      - run: node test-build.js test-fixtures

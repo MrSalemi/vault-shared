@@ -1,6 +1,6 @@
 // Pack a docx-js Document straight to a PDF, the way a guide is made.
 //
-//   const {writePdf} = require('../../builder/topdf');
+//   const {writePdf} = require('../../shared/topdf');
 //   writePdf(doc, "Some Sheet.pdf");
 //
 // The .docx is an intermediate: it is written to a temp folder, converted by

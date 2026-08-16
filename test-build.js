@@ -1,7 +1,7 @@
 // Tests for the guide builder. No robot, no Word, no network.
 // V02
 //
-//   cd guides/unit01 && node ../../builder/test-build.js
+//   cd guides/unit01 && node ../../shared/test-build.js
 //   node test-build.js <folder holding the guides>
 //
 // Exits non-zero on the first failure, so it can gate a commit.

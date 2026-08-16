@@ -6,12 +6,13 @@ suite is needed to make a guide or to print one, and there is no editable copy
 to hand-edit by mistake. The markdown is the only copy anyone can edit. That
 used to be a rule people had to remember; now it is just true.
 
-**This repo is shared.** It is a submodule of both `nhsengineering` and
-`nhsrobotics`, and each course pins its own commit. It holds no guides, no
-pictures and no course text — all of that lives with the course, and the builder
-is told where to find it.
+**This repo is shared.** It is a submodule of `nhsengineering`, `nhsrobotics`,
+and `advrobotics` (and any future vault), each pinning its own commit,
+checked out as `shared/`. It holds no guides, no pictures and no course
+text — all of that lives with the course, and the builder is told where to
+find it.
 
-*V02*
+*V03*
 
 ## What a guides folder looks like
 
@@ -29,11 +30,11 @@ guides/unit01/
 
 ```bash
 cd guides/unit01
-../../builder/build-all.sh            # build every guide that needs it
-../../builder/build-all.sh e02.md     # build just one
-../../builder/build-all.sh -d         # build and deploy
-../../builder/build-all.sh -f         # rebuild everything, current or not
-node ../../builder/test-build.js      # check the builder against these guides
+../../shared/build-all.sh             # build every guide that needs it
+../../shared/build-all.sh e02.md      # build just one
+../../shared/build-all.sh -d          # build and deploy
+../../shared/build-all.sh -f          # rebuild everything, current or not
+node ../../shared/test-build.js       # check the builder against these guides
 ```
 
 A guide is only rebuilt when its markdown, one of its pictures, or the builder
