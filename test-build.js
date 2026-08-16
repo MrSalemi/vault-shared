@@ -22,7 +22,7 @@ const GUIDES = path.resolve(process.argv[2] || process.cwd());
 if (!fs.readdirSync(GUIDES).some(f => /^[a-z]\d+\.md$/.test(f))) {
   console.error(`no guides in ${GUIDES}`);
   console.error('run this from a unit folder, or name one:');
-  console.error('  cd guides/unit01 && node ../../builder/test-build.js');
+  console.error('  cd guides/unit01 && node ../../shared/test-build.js');
   process.exit(1);
 }
 
