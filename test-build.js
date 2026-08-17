@@ -125,6 +125,30 @@ async function main() {
     check("an Obsidian image embed resolves to the guide's images/", /r:embed|<a:blip/.test(xml));
   }
 
+  // --- A sized image in a table cell is one cell, not two ---------------
+  // Obsidian writes ![[thing|155]] for a sized embed, and escapes the `|` as
+  // `\|` when that sits inside a table cell -- e.g. ![[thing\|155]] -- so the
+  // row's own `|` delimiters aren't confused with it. A naive split on every
+  // `|` tears that one cell into two, and the picture never renders.
+  console.log('\nA sized image in a table cell is one cell, not two');
+  const w8 = scratchUnit();
+  const src8 = path.join(w8, 'g.md');
+  fs.writeFileSync(src8, guide(
+    '| Part | Picture |\n' +
+    '| --- | --- |\n' +
+    '| Widget | ![[test_pic.png\\|155]] |\n'
+  ));
+  const r8 = build(w8, src8);
+  check('builds', r8.ok, r8.err.trim());
+  if (r8.ok) {
+    const {text, xml} = await textOf(path.join(w8, 'Test.docx'));
+    check('the image embeds instead of printing as text', /r:embed|<a:blip/.test(xml));
+    check('no leftover wikilink syntax reaches the page',
+          !/\[\[|\]\]|155/.test(text), text.slice(0, 200));
+    check('the row is still two cells, not three',
+          text.includes('Widget') && !text.includes('WidgetPicture'));
+  }
+
   // --- A missing course.js is refused, not guessed -----------------------
   console.log('\nA guides folder with no course.js is refused');
   const bare = scratch();

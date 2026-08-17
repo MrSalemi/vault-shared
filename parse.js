@@ -94,10 +94,17 @@ function parse(src, vars = {}) {
     // whose first row is really data needs a header written for it; the
     // importer leaves them without one because markdown has nowhere else to
     // put a first row.
+    //
+    // A cell's own `|`s -- Obsidian's image-caption separator, `![[thing|155]]`
+    // -- must not split the row. Obsidian escapes them as `\|` when it writes
+    // a table, so the row is split on unescaped `|` only, and `\|` is turned
+    // back into `|` afterward. Splitting on every `|` blindly used to tear
+    // `![[thing\|155]]` into two garbage cells.
     if (line.trim().startsWith("|") && i + 1 < lines.length &&
         /^\|?[\s:|-]*-[\s:|-]*\|?$/.test(lines[i + 1].trim()) &&
         lines[i + 1].includes("-")) {
-      const cut = s => s.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.trim());
+      const cut = s => s.trim().replace(/^\|/, "").replace(/\|$/, "")
+        .split(/(?<!\\)\|/).map(c => c.trim().replace(/\\\|/g, "|"));
       const head = cut(line);
       const align = cut(lines[i + 1]).map(spec =>
         /^:-+:$/.test(spec) ? "center" : /-+:$/.test(spec) ? "right" : "left");
