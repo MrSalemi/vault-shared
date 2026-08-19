@@ -1,5 +1,5 @@
 // Tests for the guide builder. No robot, no Word, no network.
-// V02
+// V03
 //
 //   cd guides/unit01 && node ../../shared/test-build.js
 //   node test-build.js <folder holding the guides>
@@ -218,6 +218,36 @@ async function main() {
     }
     check('every part but the clock is identical', differ.length === 0, differ.join(', '));
   }
+
+  // --- build-all.sh only needs Class Development on a -d run -------------
+  // It used to resolve deploy.txt before it had even read the arguments, so a
+  // machine without Class Development mounted could not build a guide at all.
+  // Nothing here converts anything: the PDF is written first and is newer than
+  // its sources, so the run reports "up to date" and never reaches LibreOffice.
+  console.log('\nbuild-all.sh builds without Class Development mounted');
+  const wNoDeploy = scratchUnit();
+  fs.writeFileSync(path.join(wNoDeploy, 'z01.md'), guide('Some words.', 'Z.docx'));
+  fs.writeFileSync(path.join(wNoDeploy, 'deploy.txt'), 'No Such Folder Anywhere\n');
+  fs.writeFileSync(path.join(wNoDeploy, 'Z.pdf'), 'not really a pdf');
+  const runAll = args => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), args,
+                               {cwd: wNoDeploy, stdio: 'pipe'});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+  const noDeploy = runAll(['z01.md']);
+  check('a plain run succeeds', noDeploy.ok, noDeploy.out.trim());
+  check('it did not go looking for Class Development',
+        !/Class Development/.test(noDeploy.out), noDeploy.out.trim());
+
+  // The other half of the same rule: -d still refuses, and still says why.
+  const withDeploy = runAll(['-d', 'z01.md']);
+  check('a -d run still fails when the folder is missing', !withDeploy.ok);
+  check('and the message names the folder deploy.txt asked for',
+        /No Such Folder Anywhere/.test(withDeploy.out), withDeploy.out.trim());
 
   console.log(failures === 0
     ? '\nAll checks passed.'

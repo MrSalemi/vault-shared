@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the printable guides from markdown, pad odd page counts, and report.
-# V05
+# V06
 #
 #   ./build-all.sh            build every guide that needs it
 #   ./build-all.sh e02.md     build just one
@@ -57,10 +57,26 @@ if ! ls "$HERE"/$GLOB >/dev/null 2>&1 && ls "$BUILDER"/$GLOB >/dev/null 2>&1; th
 fi
 cd "$HERE"
 
+DEPLOY=false
+FORCE=false
+FILES=()
+
+for arg in "$@"; do
+    case "$arg" in
+        -d) DEPLOY=true ;;
+        -f) FORCE=true ;;
+        *)  FILES+=("$arg") ;;
+    esac
+done
+
 # Where the finished guides go. This is course-specific, so it is not in the
 # builder: put it in deploy.txt beside the guides, as a path relative to the
 # Class Development folder. Override the whole thing with GUIDES=... if needed.
-if [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
+#
+# Only looked up on a -d run. Building a guide does not need Class Development
+# mounted, and this used to refuse to build at all on a machine without it --
+# a sandbox, or a thread that mounted only the repo.
+if [ "$DEPLOY" = true ] && [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
     rel=$(grep -v '^[[:space:]]*#' deploy.txt | grep -v '^[[:space:]]*$' | head -1)
     for root in \
         "$HOME/Library/CloudStorage/GoogleDrive-rdsalemi@gmail.com/My Drive/Teaching/Class Development" \
@@ -73,17 +89,6 @@ if [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
         exit 1
     fi
 fi
-DEPLOY=false
-FORCE=false
-FILES=()
-
-for arg in "$@"; do
-    case "$arg" in
-        -d) DEPLOY=true ;;
-        -f) FORCE=true ;;
-        *)  FILES+=("$arg") ;;
-    esac
-done
 # Was a guide named on the command line? If not this is a full run, and a full
 # run is the only one that touches extras.txt.
 NAMED=true
