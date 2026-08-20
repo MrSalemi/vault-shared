@@ -16,6 +16,31 @@ const PAGE_W = 9360;
 // Override for a one-off test with CODE_FONT="Courier New" ./build-all.sh ...
 const CODE_FONT = process.env.CODE_FONT || "Roboto Mono";
 
+// Readability settings, in Word's units: run sizes are half-points, so 24 is
+// 12pt; `line` is twentieths of a point, so 360 against 12pt text is 1.5-line
+// spacing.
+//
+// These are not arbitrary. Guides are printed and read on paper by students,
+// some of whom are dyslexic, and the standard accessibility guidance for print
+// (British Dyslexia Association, and WCAG 1.4.8 for the same reasons) asks for
+// three things: 12pt or larger, line spacing of about 1.5, and text aligned
+// left rather than justified.
+//
+// Justified text is the one that surprises people. Straightening the right edge
+// means stretching the spaces between words, so the gaps differ on every line.
+// The uneven gaps form white channels down the page that pull the eye off the
+// line, and every line ending in the same place removes the cue a reader uses
+// to find their place again. Ragged-right costs nothing and keeps both.
+//
+// Word's default alignment is already left, so the explicit LEFT below changes
+// nothing today. It is there so that a style added later cannot quietly
+// justify a guide, and so this decision is visible in the code rather than
+// resting on a default.
+const BODY_SIZE = 24;
+const CODE_SIZE = 19;
+const LINE = 360;
+const ALIGN_BODY = AlignmentType.LEFT;
+
 // A rebuild of unchanged markdown produces an identical document, but not an
 // identical FILE: Word's docProps carries a creation time, and the zip stamps
 // each entry with the clock. So `git status` shows a rebuilt guide as modified
@@ -48,7 +73,7 @@ const INLINE = /`([^`]+)`|(?<!!)\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(
 function runs(text, base = {}) {
   const out = [];
   const plain = (s) => {
-    if (s) out.push(new TextRun({text: s, size: 22, ...base}));
+    if (s) out.push(new TextRun({text: s, size: BODY_SIZE, ...base}));
   };
 
   INLINE.lastIndex = 0;
@@ -57,15 +82,15 @@ function runs(text, base = {}) {
   while ((m = INLINE.exec(text)) !== null) {
     plain(text.slice(last, m.index));
     if (m[1] !== undefined) {
-      out.push(new TextRun({text: m[1], size: 19, ...base, font: CODE_FONT}));
+      out.push(new TextRun({text: m[1], size: CODE_SIZE, ...base, font: CODE_FONT}));
     } else if (m[2] !== undefined) {
       plain(m[3] ?? m[2]);                // [[target|label]] -> label, [[target]] -> target
     } else if (m[4] !== undefined) {
       plain(m[4]);                        // [label](target)  -> label
     } else if (m[6] !== undefined) {
-      out.push(new TextRun({text: m[6], size: 22, ...base, bold: true}));
+      out.push(new TextRun({text: m[6], size: BODY_SIZE, ...base, bold: true}));
     } else {
-      out.push(new TextRun({text: m[7], size: 22, ...base, italics: true}));
+      out.push(new TextRun({text: m[7], size: BODY_SIZE, ...base, italics: true}));
     }
     last = INLINE.lastIndex;
   }
@@ -75,21 +100,24 @@ function runs(text, base = {}) {
 
 function para(text, o = {}) {
   return new Paragraph({children: runs(text, o.base || {}),
-                        spacing: {after: o.after ?? 120, line: 276}});
+                        alignment: ALIGN_BODY,
+                        spacing: {after: o.after ?? 120, line: LINE}});
 }
 function bulletP(text) {
   return new Paragraph({children: runs(text),
                         numbering: {reference: "gb", level: 0},
-                        spacing: {after: 80, line: 276}});
+                        alignment: ALIGN_BODY,
+                        spacing: {after: 80, line: LINE}});
 }
 function numP(text) {
   return new Paragraph({children: runs(text),
                         numbering: {reference: "gn", level: 0},
-                        spacing: {after: 80, line: 276}});
+                        alignment: ALIGN_BODY,
+                        spacing: {after: 80, line: LINE}});
 }
 function codeBlock(src) {
   const lines = src.split("\n").map(l => new Paragraph({
-    children: [new TextRun({text: l === "" ? " " : l, font: CODE_FONT, size: 19})],
+    children: [new TextRun({text: l === "" ? " " : l, font: CODE_FONT, size: CODE_SIZE})],
     spacing: {after: 0, line: 240},
   }));
   return new Table({
@@ -272,10 +300,12 @@ function render(blocks, contentDir) {
                               keepNext: true, spacing: {before: 260, after: 120}}));
     } else if (kind === "lead") {
       out.push(new Paragraph({children: runs(payload, {bold: true}),
-                              spacing: {after: 180, line: 276}}));
+                              alignment: ALIGN_BODY,
+                              spacing: {after: 180, line: LINE}}));
     } else if (kind === "note") {
       out.push(new Paragraph({children: runs(payload, {italics: true, color: "595959"}),
-                              spacing: {after: 180, line: 276}}));
+                              alignment: ALIGN_BODY,
+                              spacing: {after: 180, line: LINE}}));
     } else if (kind === "p") {
       out.push(para(payload));
     } else if (kind === "b") {
@@ -353,7 +383,7 @@ async function build(outPath, ver, blocks, contentDir) {
     : [];
   const doc = new Document({
     styles: {default: {
-      document: {run: {font: "Calibri", size: 22}},
+      document: {run: {font: "Calibri", size: BODY_SIZE}},
       title: {run: {font: "Calibri", size: 36, bold: true, color: "000000"}},
       heading1: {run: {font: "Calibri", size: 30, bold: true, color: "000000"}},
       heading2: {run: {font: "Calibri", size: 25, bold: true, color: "000000"}},

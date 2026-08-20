@@ -149,6 +149,34 @@ async function main() {
           text.includes('Widget') && !text.includes('WidgetPicture'));
   }
 
+  // --- Print readability: 12pt, 1.5 spacing, ragged right ----------------
+  // Guides are printed and read on paper, some of them by dyslexic students.
+  // The standard print guidance asks for 12pt or larger, line spacing near
+  // 1.5, and left-aligned rather than justified text. All three are cheap and
+  // all three are easy to lose in a later edit, which is why they are pinned
+  // here rather than left to a default: Word's own default alignment is left,
+  // so a justified guide would come from a style someone added, and nothing
+  // would fail.
+  console.log('\nBody text is 12pt, 1.5-spaced, and left-aligned');
+  const w9 = scratchUnit();
+  const src9 = path.join(w9, 'g.md');
+  fs.writeFileSync(src9, guide(
+    'A paragraph long enough to wrap across more than one printed line, so ' +
+    'that its alignment and its line spacing are both visible on the page.\n\n' +
+    '- A bullet that also wraps, for the same reason as the paragraph above.\n'
+  ));
+  const r9 = build(w9, src9);
+  check('builds', r9.ok, r9.err.trim());
+  if (r9.ok) {
+    const {xml} = await textOf(path.join(w9, 'Test.docx'));
+    check('body runs are 12pt', /<w:sz w:val="24"\/>/.test(xml));
+    check('line spacing is 1.5', /w:line="360"/.test(xml));
+    check('paragraphs say left, explicitly',
+          /<w:jc w:val="left"\/>/.test(xml));
+    check('nothing on the page is justified',
+          !/w:val="both"|w:val="distribute"/.test(xml));
+  }
+
   // --- A missing course.js is refused, not guessed -----------------------
   console.log('\nA guides folder with no course.js is refused');
   const bare = scratch();
