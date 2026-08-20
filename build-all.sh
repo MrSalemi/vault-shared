@@ -103,31 +103,48 @@ BUILDER_FILES=("$BUILDER/build.js" "$BUILDER/parse.js" "$BUILDER/make.js")
 # node writes the .docx, LibreOffice paginates it, poppler counts the pages.
 # All three have to be on PATH, and when one is not this script used to die
 # saying nothing at all: the conversion runs in a subshell with its output
-# redirected, so `set -e` ended the run with a blank screen. Check up front and
-# name what is missing.
+# redirected, so `set -e` ended the run with a blank screen. So the tools are
+# checked by name, and what is missing is printed.
 #
 # The macOS installer does not put soffice on PATH, so look where it lands.
 if ! command -v soffice >/dev/null 2>&1 \
    && [ -x "/Applications/LibreOffice.app/Contents/MacOS/soffice" ]; then
     PATH="/Applications/LibreOffice.app/Contents/MacOS:$PATH"
 fi
-missing=()
-for tool in node soffice pdftoppm; do
-    command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
-done
-if [ ${#missing[@]} -ne 0 ]; then
-    echo "ERROR: not on PATH: ${missing[*]}" >&2
-    echo >&2
-    for tool in "${missing[@]}"; do
-        case "$tool" in
-            node)     echo "  node      brew install node" >&2 ;;
-            soffice)  echo "  soffice   LibreOffice, from libreoffice.org or" >&2
-                      echo "            brew install --cask libreoffice" >&2 ;;
-            pdftoppm) echo "  pdftoppm  brew install poppler" >&2 ;;
-        esac
+
+# The check is made when a guide actually needs converting, not up front.
+# A run where every guide is already current converts nothing, so demanding
+# LibreOffice from it fails a job that was never going to use the tool -- the
+# same mistake #37 fixed for Class Development, in a different costume. It is
+# what kept vault-shared's own CI red: the runner has node and no LibreOffice,
+# and the one test that runs build-all.sh expects an all-current run to
+# succeed.
+#
+# Checked once per run, not once per guide, so a long build cannot print the
+# same complaint ten times.
+tools_ok=false
+require_tools() {
+    [ "$tools_ok" = true ] && return 0
+    local missing=()
+    local tool
+    for tool in node soffice pdftoppm; do
+        command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
     done
-    exit 1
-fi
+    if [ ${#missing[@]} -ne 0 ]; then
+        echo "ERROR: not on PATH: ${missing[*]}" >&2
+        echo >&2
+        for tool in "${missing[@]}"; do
+            case "$tool" in
+                node)     echo "  node      brew install node" >&2 ;;
+                soffice)  echo "  soffice   LibreOffice, from libreoffice.org or" >&2
+                          echo "            brew install --cask libreoffice" >&2 ;;
+                pdftoppm) echo "  pdftoppm  brew install poppler" >&2 ;;
+            esac
+        done
+        exit 1
+    fi
+    tools_ok=true
+}
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -168,6 +185,7 @@ for md in "${FILES[@]}"; do
         printf "%-38s up to date\n" "$pdf"
         skipped=$((skipped + 1))
     else
+        require_tools
         rm -f "$WORK"/*
         ( cd "$WORK" && node "$BUILDER/make.js" "$HERE/$md" > /dev/null )
 
@@ -238,6 +256,11 @@ if [ "$NAMED" = false ]; then
                 [ -n "$gen" ] && [ "$gen" -nt "$target" ] && stale=true
                 [ "$FORCE" = true ] && stale=true
                 if [ "$stale" = true ]; then
+                    # An extra's recipe is arbitrary, but in practice it is
+                    # `node tracker.js`, which reaches topdf.js and therefore
+                    # LibreOffice. Same rule as a guide: check the tools when
+                    # something is actually being made.
+                    require_tools
                     sh -c "$recipe" > /dev/null
                     printf "%-38s remade\n" "$target"
                     built=$((built + 1))

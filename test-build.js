@@ -270,8 +270,48 @@ async function main() {
   check('a plain run succeeds', noDeploy.ok, noDeploy.out.trim());
   check('it did not go looking for Class Development',
         !/Class Development/.test(noDeploy.out), noDeploy.out.trim());
+  // The same run must not demand LibreOffice either. It converts nothing --
+  // every guide is current -- and this repo's CI runner has node and no
+  // LibreOffice, so an up-front tool check turns a green build red. Asserting
+  // on the message keeps the reason visible: a passing exit code alone would
+  // not say whether the tools were skipped or merely present.
+  check('it did not demand LibreOffice for a run that converts nothing',
+        !/not on PATH/.test(noDeploy.out), noDeploy.out.trim());
+
+  // The other half of the tool rule: a run that really does have to convert
+  // must still refuse, and still name what is missing. Deferring the check
+  // must not become skipping it. Simulated by making the guide stale and
+  // handing the script a PATH with node but no LibreOffice, which is the CI
+  // runner's shape.
+  const stalePdf = path.join(wNoDeploy, 'Z.pdf');
+  const past = new Date(Date.now() - 60_000);
+  fs.utimesSync(stalePdf, past, past);
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-bin-'));
+  for (const t of ['node', 'dirname', 'grep', 'head', 'sed', 'awk', 'cat',
+                   'ls', 'mktemp', 'rm', 'mkdir', 'cp', 'mv', 'basename',
+                   'wc', 'sort', 'tr', 'sh', 'bash', 'env']) {
+    for (const dir of ['/usr/bin', '/bin', '/usr/local/bin']) {
+      if (fs.existsSync(path.join(dir, t))) {
+        fs.symlinkSync(path.join(dir, t), path.join(bin, t));
+        break;
+      }
+    }
+  }
+  let noTools;
+  try {
+    execFileSync(path.join(__dirname, 'build-all.sh'), ['z01.md'],
+                 {cwd: wNoDeploy, stdio: 'pipe', env: {PATH: bin}});
+    noTools = {ok: true, out: ''};
+  } catch (e) {
+    noTools = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a run that must convert still refuses without LibreOffice',
+        !noTools.ok, noTools.out.trim());
+  check('and it names the tool that is missing',
+        /not on PATH:.*soffice/.test(noTools.out), noTools.out.trim());
 
   // The other half of the same rule: -d still refuses, and still says why.
+  fs.writeFileSync(stalePdf, 'not really a pdf');
   const withDeploy = runAll(['-d', 'z01.md']);
   check('a -d run still fails when the folder is missing', !withDeploy.ok);
   check('and the message names the folder deploy.txt asked for',
