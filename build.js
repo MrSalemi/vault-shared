@@ -1,9 +1,10 @@
-// Guide generator V04.
-// Inline markup in any text: `code`, **bold**, *italic*, and links, which print
-// as their label only.
+// Guide generator V05.
+// Inline markup in any text: `code`, $math$, **bold**, *italic*, and links,
+// which print as their label only.
 const d = require('docx');
 const fs = require('fs');
 const path = require('path');
+const {mathRun} = require('./math');
 const {Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow,
        TableCell, WidthType, ShadingType, LevelFormat, AlignmentType,
        Footer, PageNumber, BorderStyle, PageBreak, ImageRun, VerticalAlign} = d;
@@ -68,12 +69,21 @@ const ALIGN_BODY = AlignmentType.LEFT;
 //
 // `base` supplies the paragraph's own styling (a lead line is bold, a note is
 // grey italic); the inline flag is applied after it so it always wins.
-const INLINE = /`([^`]+)`|(?<!!)\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+//
+// $math$ is matched after code spans, so `$5` inside backticks stays literal.
+// Both delimiters must sit against non-space -- $x$ and $a = \frac{b}{c}$ are
+// math, "a $20 and $30 item" is not. Without that rule a pair of prices in one
+// sentence would be read as an equation, which is the one way this feature
+// could quietly damage a guide that never asked for it. A single lone $ cannot
+// match at all, having nothing to pair with. A literal dollar next to another
+// one is written \$.
+const INLINE = /`([^`]+)`|\$(\S|\S(?:[^$\\]|\\.)*?\S)\$|(?<!!)\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
 function runs(text, base = {}) {
   const out = [];
   const plain = (s) => {
-    if (s) out.push(new TextRun({text: s, size: BODY_SIZE, ...base}));
+    if (s) out.push(new TextRun({text: s.replace(/\\\$/g, "$"),
+                                 size: BODY_SIZE, ...base}));
   };
 
   INLINE.lastIndex = 0;
@@ -84,13 +94,15 @@ function runs(text, base = {}) {
     if (m[1] !== undefined) {
       out.push(new TextRun({text: m[1], size: CODE_SIZE, ...base, font: CODE_FONT}));
     } else if (m[2] !== undefined) {
-      plain(m[3] ?? m[2]);                // [[target|label]] -> label, [[target]] -> target
-    } else if (m[4] !== undefined) {
-      plain(m[4]);                        // [label](target)  -> label
-    } else if (m[6] !== undefined) {
-      out.push(new TextRun({text: m[6], size: BODY_SIZE, ...base, bold: true}));
+      out.push(mathRun(m[2]));            // $ ... $ -> a real Word equation
+    } else if (m[3] !== undefined) {
+      plain(m[4] ?? m[3]);                // [[target|label]] -> label, [[target]] -> target
+    } else if (m[5] !== undefined) {
+      plain(m[5]);                        // [label](target)  -> label
+    } else if (m[7] !== undefined) {
+      out.push(new TextRun({text: m[7], size: BODY_SIZE, ...base, bold: true}));
     } else {
-      out.push(new TextRun({text: m[7], size: BODY_SIZE, ...base, italics: true}));
+      out.push(new TextRun({text: m[8], size: BODY_SIZE, ...base, italics: true}));
     }
     last = INLINE.lastIndex;
   }
@@ -289,6 +301,18 @@ function render(blocks, contentDir) {
     const next = at + 1 < blocks.length ? blocks[at + 1][0] : null;
     const nextIsImage = next === "image";
     const nextStartsSection = next === "h1" || next === "h2" || next === "title";
+    // A heading is set by Word's own style and takes plain text, not runs, so
+    // an equation in one would print as its own source. Refused rather than
+    // shipped: silently printing "$\frac{a}{b}$" on a handout is the failure
+    // this whole feature exists to prevent.
+    if ((kind === "title" || kind === "h1" || kind === "h2") &&
+        /\$(\S|\S(?:[^$\\]|\\.)*?\S)\$/.test(payload)) {
+      const e = new Error(
+        `math is not supported in a heading\n  in: ${payload}\n` +
+        `  move the equation into the text under it`);
+      e.mathError = true;
+      throw e;
+    }
     if (kind === "title") {
       out.push(new Paragraph({text: payload, heading: HeadingLevel.TITLE,
                               keepNext: true, spacing: {after: 120}}));

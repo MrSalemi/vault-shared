@@ -1,13 +1,13 @@
 # Red/Blue 2026-2027 Schedule Calendar — Cycle Days & Holidays
 
-*Captured from `Red Blue 2627 Calendar.xlsx` (Schedule sheet), 307 dated rows, 2026-08-24 through 2027-06-26. (The file also contains a `Physics 2425` sheet — that's the prior year's, 2024-2025, schedule and isn't captured here.)*
+*Captured from the `Red Blue 2627 Calendar` Google Sheet (Schedule tab), 307 dated rows, 2026-08-24 through 2027-06-26. An earlier capture came from a `.xlsx` export that also carried a `Physics 2425` tab — the 2024-2025 schedule, since deleted from the source.*
 
-**This file holds only the cycle-day schedule and holidays — infrastructure shared by every course.** Per-course due dates and exams live in each course's own repo instead, since students don't overlap between Physics, Robotics, and Engineering, and a thread about one has no use for another's dates.
+**This file holds only the cycle-day schedule, holidays, and term boundaries — infrastructure shared by every course.** Per-course due dates and exams live in each course's own repo instead, since students don't overlap between Physics, Robotics, and Engineering, and a thread about one has no use for another's dates.
 
 - Engineering Blue 1 — `nhsengineering/CALENDAR.md`
 - Robotics Red 1 — `nhsrobotics/CALENDAR.md`
 - Advanced Robotics — `advrobotics/CALENDAR.md` (not in the source calendar; file explains why)
-- Physics — not yet split out; do the same when that repo is mounted.
+- Physics Blue 2, Red 2, Red 3 — `physics/CALENDAR.md`
 
 ## Column legend (from row 1 of the source file)
 
@@ -22,9 +22,22 @@
 | G | Robotics Red 1 |
 | H | Engineering Blue 1 |
 
-Column B carries the day's cycle code (`R1`/`R2`/`B1`/`B2`) or a named non-cycle day (holiday, break, etc. — see below). Columns D-H are per-course/section columns that held that course's due dates and exams in the source file; those values now live in each course's own repo, not here. The meaning of the R/B cycle numbering itself isn't stated in the source file and should be confirmed if it matters.
+Column B carries the day's cycle code (`R1`/`R2`/`B1`/`B2`) or a named non-cycle day (holiday, break, etc. — see below). Columns D-H are per-course/section columns that held that course's due dates and exams in the source file; those values now live in each course's own repo, not here.
+
+**What the R/B numbering means.** A section meets on every day of its colour: a red-day section meets on both `R1` and `R2` days, a blue-day section on both `B1` and `B2`. The 1 and 2 are block ordering within the day, not different sets of meetings. The source file never says so, but the exam rows settle it — Physics red exams land on both `R1` and `R2` days across the year, and blue exams on both `B1` and `B2`. A section that met on only one of the two could not do that.
 
 Note: two "Last Day of School" entries appear (2027-06-11 and 2027-06-21) — likely an earliest-possible date and a snow-day contingency date, standard for MA school calendars, but not stated explicitly in the file.
+
+## Term boundaries
+
+| Term | Ends |
+|---|---|
+| Term 1 | 2026-10-30 (Fri) |
+| Term 2 | 2027-01-15 (Fri) |
+| Term 3 | 2027-04-02 (Fri) |
+| Term 4 | end of year |
+
+Marked across every course column in the source file, so they belong here rather than in any one course's calendar.
 
 ## Non-cycle days (holidays, breaks, special days)
 

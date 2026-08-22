@@ -79,4 +79,19 @@ const [meta0] = parse(src);
 const vars = course(meta0);
 
 const [meta, blocks] = parse(src, vars);
-build(meta.out, meta.version, blocks, contentDir);
+
+// A bad equation is a mistake in the markdown, not a crash in the builder, so
+// it is reported the way the link rule above is: the file, then the problem.
+// A stack trace would say where the parser gave up, which is no help to the
+// person who has to fix the guide.
+//
+// build() is async, so a throw inside it arrives as a rejected promise rather
+// than as an exception a plain try/catch would see. Caught with .catch() for
+// that reason -- wrapping the call in try/catch looks right and does nothing.
+build(meta.out, meta.version, blocks, contentDir).catch(e => {
+  if (e && e.mathError) {
+    console.error(`${mdPath}: ${e.message}`);
+    process.exit(1);
+  }
+  throw e;
+});

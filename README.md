@@ -7,12 +7,12 @@ to hand-edit by mistake. The markdown is the only copy anyone can edit. That
 used to be a rule people had to remember; now it is just true.
 
 **This repo is shared.** It is a submodule of `nhsengineering`, `nhsrobotics`,
-and `advrobotics` (and any future vault), each pinning its own commit,
-checked out as `shared/`. It holds no guides, no pictures and no course
-text — all of that lives with the course, and the builder is told where to
-find it.
+`advrobotics` and `physics` (and any future vault), each pinning its own
+commit, checked out as `shared/`. It holds no guides, no pictures and no
+course text — all of that lives with the course, and the builder is told
+where to find it.
 
-*V03*
+*V04*
 
 ## What a guides folder looks like
 
@@ -21,7 +21,7 @@ needs is there:
 
 ```
 guides/unit01/
-  e00.md … e09.md      one guide per file, eNN or pNN
+  e00.md … e09.md      one guide per file, a letter and two digits
   images/              every picture the guides use
   course.js            what this course's {{PLACEHOLDERS}} say   (required)
   extras.txt           things that ship with the guides          (optional)
@@ -93,11 +93,41 @@ command line skips extras.
 | `![alt](images/thing.png)` | the same thing |
 | `\| a \| b \|` + separator | table, first row is the header |
 | `` `code` `` `**bold**` `*italic*` | inline runs |
+| `$\frac{a}{b}$` | a real equation — see below |
 | `[label](target)`, `[[target\|label]]` | **the label only** |
 | `{{NAME}}` | whatever `course.js` says |
 
 Frontmatter carries `out` (the filename to write), `version`, `title`, `number`,
 and anything else a course's `course.js` wants to read.
+
+## Math
+
+`$ ... $` prints a real Word equation, so a fraction is stacked with a bar
+rather than flattened to a slash. The syntax is a small slice of LaTeX,
+picked because Obsidian already renders it — the equation looks right while
+you write it and again on the page.
+
+| Written | Prints |
+|---|---|
+| `$\frac{v_f - v_i}{\Delta t}$` | a stacked fraction |
+| `$v_f$` | v with a subscript f |
+| `$m/s^2$` | m/s squared |
+| `$q_1^2$` | q with both scripts |
+| `$\sqrt{\frac{2d}{a}}$` | a root over a fraction |
+
+Also `\Delta \delta \Omega \omega \alpha \beta \gamma \theta \lambda \mu \pi
+\rho \sigma \tau \phi \times \cdot \div \pm \approx \neq \leq \geq \degree
+\infty \rightarrow \leftarrow`.
+
+**That list is the whole language.** Anything else — `\int`, a misspelled
+command, a missing brace — stops the build and names the file and the
+problem. That is the point: a full LaTeX library would accept things Word
+cannot draw, and the mistake would then surface as a wrong equation in a
+student's hand instead of an error on your screen.
+
+Dollar signs in ordinary prose are safe. Both delimiters must sit against
+non-space, so "a $20 and $30 item" is money, not an equation. A single `$`
+has nothing to pair with. Write `\$` for a literal dollar next to another.
 
 ## Rules that bite
 
@@ -116,6 +146,12 @@ and anything else a course's `course.js` wants to read.
   `*italic*` separately. Triple asterisks print as literal asterisks.
 - **A table's first row is its header.** A parts list whose first row is really
   data needs a header written for it.
+- **Math needs a base inside the `$`.** `m/s$^2$` is legal LaTeX and is
+  refused anyway: Word draws the empty base as nothing, LibreOffice draws a
+  small empty box, and the PDF is what a student holds. Write `$m/s^2$`.
+- **A heading takes no math.** Word sets a heading from its own style, which
+  takes plain text, so an equation there would print as its own source.
+  Refused rather than shipped.
 - **Length costs sheets, not pages.** 3 and 4 pages are both 2 sheets. Only an
   even-to-odd crossing matters.
 

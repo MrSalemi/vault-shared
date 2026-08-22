@@ -177,6 +177,116 @@ async function main() {
           !/w:val="both"|w:val="distribute"/.test(xml));
   }
 
+  // --- $math$ becomes a real Word equation -------------------------------
+  // Physics guides carry 209 equations across the year, and every one of them
+  // is a fraction, a subscript, a superscript, both scripts at once, or a
+  // square root. Flattening those to text loses meaning rather than looks:
+  // "a = (v_f - v_i)/Δt" written flat reads "aaverage=∆v∆t", which is not the
+  // same equation. So the builder emits Word's own math, which LibreOffice
+  // then draws properly in the PDF.
+  //
+  // The check is on the math XML, not the visible text: <m:f> is a fraction,
+  // <m:sSub> a subscript, and so on. Word puts equation characters in <m:t>
+  // rather than <w:t>, so textOf's plain text deliberately does not see them.
+  console.log('\n$math$ becomes a real Word equation');
+  const wM = scratchUnit();
+  const srcM = path.join(wM, 'g.md');
+  fs.writeFileSync(srcM, guide(
+    'Acceleration is $a = \\frac{v_f - v_i}{\\Delta t}$ in every case.\n\n' +
+    'Units are $m/s^2$, charge is $q_1^2$, and time is $\\sqrt{\\frac{2d}{a}}$.\n'
+  ));
+  const rM = build(wM, srcM);
+  check('builds', rM.ok, rM.err.trim());
+  if (rM.ok) {
+    const {text, xml} = await textOf(path.join(wM, 'Test.docx'));
+    check('a fraction is a fraction', /<m:f>/.test(xml));
+    check('a subscript is a subscript', /<m:sSub>/.test(xml));
+    check('a superscript is a superscript', /<m:sSup>/.test(xml));
+    check('sub and super together are one object', /<m:sSubSup>/.test(xml));
+    check('a root is a root', /<m:rad>/.test(xml));
+    check('the surrounding sentence still prints',
+          text.includes('Acceleration is') && text.includes('in every case.'));
+    check('no LaTeX source reaches the page',
+          !/\\frac|\\sqrt|\\Delta|\$/.test(text), text.slice(0, 200));
+  }
+
+  // --- A dollar sign is still a dollar sign ------------------------------
+  // The one way this feature could damage a guide that never asked for it:
+  // two prices in a sentence looking like a pair of math delimiters. Both
+  // delimiters must sit against non-space, so "a $20 and $30 item" is money.
+  // Engineering and Robotics guides are full of ordinary prose and must not
+  // change because Physics wanted equations.
+  console.log('\nOrdinary dollar signs are left alone');
+  const wD = scratchUnit();
+  const srcD = path.join(wD, 'g.md');
+  fs.writeFileSync(srcD, guide(
+    'The kit costs $20 and the spare costs $30, so budget $50.\n\n' +
+    'A lone $ is just a dollar sign.\n\n' +
+    'Backticks protect it: `$5 each`.\n\n' +
+    'An escaped \\$ prints as one too.\n'
+  ));
+  const rD = build(wD, srcD);
+  check('builds', rD.ok, rD.err.trim());
+  if (rD.ok) {
+    const {text, xml} = await textOf(path.join(wD, 'Test.docx'));
+    check('two prices in a sentence stay text', text.includes('$20 and the spare costs $30'));
+    check('a lone dollar sign survives', text.includes('A lone $ is just'));
+    check('a dollar in backticks survives', text.includes('$5 each'));
+    check('an escaped dollar loses its backslash', text.includes('An escaped $ prints'));
+    check('nothing here became an equation', !/<m:oMath/.test(xml));
+  }
+
+  // --- Bad math fails the build, loudly ----------------------------------
+  // One rule with several faces: anything outside the five supported
+  // constructs, and anything malformed, must stop the build and say why. The
+  // alternative is a wrong equation printed on a handout, which nobody
+  // catches until a student is looking at it.
+  console.log('\nUnsupported or malformed math fails the build');
+  const bad = [
+    ['an unsupported command', '$\\int x$',        /\\int is not supported/],
+    ['an unknown command',     '$\\wibble{x}$',    /\\wibble is not supported/],
+    ['a missing closing brace','$\\frac{a}{b$',    /missing '}'/],
+    ['too few arguments',      '$\\frac{a} + 1$',  /\\frac needs a \{\.\.\.\} argument/],
+    ['an empty argument',      '$\\sqrt{}$',       /empty \{\} argument/],
+    ['a script with nothing after it', '$x^$',     /with nothing after it/],
+    ['two subscripts on one thing',    '$x_a_b$',  /two subscripts/],
+    // Legal LaTeX, refused on purpose: Word draws an empty base as nothing,
+    // LibreOffice draws a small empty box, and the PDF is what a student
+    // holds. Only looking at the PDF caught this.
+    ['a script with no base',   'at 9.8 m/s$^2$ here', /Put the whole thing in the math/],
+    ['math in a heading',      '## Find $x^2$',    /not supported in a heading/],
+  ];
+  for (const [name, body, wanted] of bad) {
+    const wB = scratchUnit();
+    const srcB = path.join(wB, 'g.md');
+    fs.writeFileSync(srcB, guide(body));
+    const rB = build(wB, srcB);
+    check(`${name} fails the build`, !rB.ok);
+    check(`${name} says why`, wanted.test(rB.err), rB.err.trim());
+    check(`${name} names the file`, /g\.md/.test(rB.err), rB.err.trim());
+  }
+
+  // --- Math survives where text already works ----------------------------
+  // Equations turn up inside worksheet problems, which are numbered lists and
+  // table cells as often as paragraphs.
+  console.log('\nMath works in lists and table cells too');
+  const wL = scratchUnit();
+  const srcL = path.join(wL, 'g.md');
+  fs.writeFileSync(srcL, guide(
+    '1. Solve for $v_f$ given $a = 2$.\n\n' +
+    '| Quantity | Formula |\n' +
+    '| --- | --- |\n' +
+    '| Speed | $\\frac{d}{t}$ |\n'
+  ));
+  const rL = build(wL, srcL);
+  check('builds', rL.ok, rL.err.trim());
+  if (rL.ok) {
+    const {text, xml} = await textOf(path.join(wL, 'Test.docx'));
+    check('a numbered item can hold an equation', /<m:sSub>/.test(xml));
+    check('a table cell can hold an equation', /<m:f>/.test(xml));
+    check('no LaTeX source reaches the page', !/\\frac|\$/.test(text), text.slice(0, 200));
+  }
+
   // --- A missing course.js is refused, not guessed -----------------------
   console.log('\nA guides folder with no course.js is refused');
   const bare = scratch();
