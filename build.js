@@ -77,7 +77,12 @@ const ALIGN_BODY = AlignmentType.LEFT;
 // could quietly damage a guide that never asked for it. A single lone $ cannot
 // match at all, having nothing to pair with. A literal dollar next to another
 // one is written \$.
-const INLINE = /`([^`]+)`|\$(\S|\S(?:[^$\\]|\\.)*?\S)\$|(?<!!)\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+// The closing $ must not be followed by a digit either. Without that,
+// "costs $20-$30" reads as math: the opening $ has a non-space after it and
+// the closing one a non-space before it, so the price range parses happily
+// as the expression "20-" and prints in italics. Two prices separated by a
+// hyphen is ordinary prose in an Engineering parts list.
+const INLINE = /`([^`]+)`|\$(\S|\S(?:[^$\\]|\\.)*?\S)\$(?![0-9])|(?<!!)\[\[([^\]|]+?)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
 function runs(text, base = {}) {
   const out = [];

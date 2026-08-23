@@ -221,6 +221,9 @@ async function main() {
   const srcD = path.join(wD, 'g.md');
   fs.writeFileSync(srcD, guide(
     'The kit costs $20 and the spare costs $30, so budget $50.\n\n' +
+    // A hyphenated price range is the nastiest case: "$20-$" has a non-space
+    // at both ends, so only the "no digit after the closing $" rule saves it.
+    'Budget $20-$30 for the parts, or $5-$8 each.\n\n' +
     'A lone $ is just a dollar sign.\n\n' +
     'Backticks protect it: `$5 each`.\n\n' +
     'An escaped \\$ prints as one too.\n'
@@ -230,6 +233,8 @@ async function main() {
   if (rD.ok) {
     const {text, xml} = await textOf(path.join(wD, 'Test.docx'));
     check('two prices in a sentence stay text', text.includes('$20 and the spare costs $30'));
+    check('a hyphenated price range stays text',
+          text.includes('$20-$30') && text.includes('$5-$8'), text.slice(0, 300));
     check('a lone dollar sign survives', text.includes('A lone $ is just'));
     check('a dollar in backticks survives', text.includes('$5 each'));
     check('an escaped dollar loses its backslash', text.includes('An escaped $ prints'));
@@ -446,6 +451,43 @@ async function main() {
         !noTools.ok, noTools.out.trim());
   check('and it names the tool that is missing',
         /not on PATH:.*soffice/.test(noTools.out), noTools.out.trim());
+
+  // --- A guide can deploy into a subfolder of the target -----------------
+  // Physics keeps a section's worksheet, answer sheet and teaching plan
+  // together in a folder named for the section, because the section number
+  // is easier to find as a folder than buried in three filenames. A guide
+  // with no `folder:` line must still land straight in the target, which is
+  // what Robotics and Engineering rely on.
+  console.log('\nfolder: in frontmatter deploys into a subfolder');
+  // A bare scratch folder, not scratchUnit(): this run globs every guide in
+  // the folder, and scratchUnit's empty sibling files have no frontmatter.
+  const wF = scratch();
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-deploy-'));
+  fs.writeFileSync(path.join(wF, 'course.js'), "module.exports = () => ({});\n");
+  fs.writeFileSync(path.join(wF, 'y01.md'),
+    guide('In a subfolder.', 'Sub.docx').replace('number: "99"', 'number: "99"\nfolder: "1.2"'));
+  fs.writeFileSync(path.join(wF, 'y02.md'), guide('At the top.', 'Top.docx'));
+  const runF = () => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), ['-d'],
+                               {cwd: wF, stdio: 'pipe', env: {...process.env, GUIDES: target}});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+  const rF = runF();
+  check('builds and deploys', rF.ok, rF.out.trim());
+  if (rF.ok) {
+    check('a guide naming a folder lands in it',
+          fs.existsSync(path.join(target, '1.2', 'Sub.pdf')),
+          fs.readdirSync(target).join(', '));
+    check('a guide with no folder still lands at the top',
+          fs.existsSync(path.join(target, 'Top.pdf')),
+          fs.readdirSync(target).join(', '));
+    check('the subfolder guide did NOT also land at the top',
+          !fs.existsSync(path.join(target, 'Sub.pdf')));
+  }
 
   // The other half of the same rule: -d still refuses, and still says why.
   fs.writeFileSync(stalePdf, 'not really a pdf');

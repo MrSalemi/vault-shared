@@ -224,8 +224,20 @@ for md in "${FILES[@]}"; do
             echo "ERROR: Project Guides folder not found. Set GUIDES=/path/to/it" >&2
             exit 1
         fi
-        if [ ! -f "$GUIDES/$pdf" ] || [ "$pdf" -nt "$GUIDES/$pdf" ]; then
-            cp "$pdf" "$GUIDES/"
+        # A guide may ask for a subfolder of the deploy target, with
+        # `folder: 1.2` in its frontmatter. Physics wants the worksheet, the
+        # answer sheet and the teaching plan for a section sitting together,
+        # and the section number is easier to find as a folder than buried in
+        # three filenames. Without the line a guide deploys straight into the
+        # target, which is what Robotics and Engineering do.
+        sub=$(grep -m1 '^folder:' "$md" | sed 's/^folder:[[:space:]]*//' | sed 's/["'\'']//g')
+        dest="$GUIDES"
+        if [ -n "$sub" ]; then
+            dest="$GUIDES/$sub"
+            mkdir -p "$dest"
+        fi
+        if [ ! -f "$dest/$pdf" ] || [ "$pdf" -nt "$dest/$pdf" ]; then
+            cp "$pdf" "$dest/"
             printf "%-38s -> deployed\n" "$pdf"
         fi
     fi

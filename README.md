@@ -98,7 +98,16 @@ command line skips extras.
 | `{{NAME}}` | whatever `course.js` says |
 
 Frontmatter carries `out` (the filename to write), `version`, `title`, `number`,
-and anything else a course's `course.js` wants to read.
+an optional `folder` (a subfolder of the deploy target — see below), and
+anything else a course's `course.js` wants to read.
+
+## Deploying into subfolders
+
+`deploy.txt` names one target folder for the whole guides folder. A guide can
+land in a subfolder of it by adding `folder: 1.2` to its frontmatter; the
+folder is created if it does not exist. Physics uses this to keep a section's
+worksheet, answer sheet and teaching plan together. A guide with no `folder:`
+line deploys straight into the target, as Robotics and Engineering do.
 
 ## Math
 
