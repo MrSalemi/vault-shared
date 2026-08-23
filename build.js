@@ -330,6 +330,11 @@ function render(blocks, contentDir) {
       out.push(new Paragraph({children: runs(payload, {italics: true, color: "595959"}),
                               alignment: ALIGN_BODY,
                               spacing: {after: 180, line: LINE}}));
+    } else if (kind === "space") {
+      // Writing room on a worksheet. An empty run rather than a blank line,
+      // because Word collapses a paragraph with nothing in it at all.
+      out.push(new Paragraph({children: [new TextRun({text: "", size: BODY_SIZE})],
+                              spacing: {after: 120, line: LINE}}));
     } else if (kind === "p") {
       out.push(para(payload));
     } else if (kind === "b") {

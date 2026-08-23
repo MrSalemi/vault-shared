@@ -287,6 +287,33 @@ async function main() {
     check('no LaTeX source reaches the page', !/\\frac|\$/.test(text), text.slice(0, 200));
   }
 
+  // --- <space> gives writing room on a worksheet -------------------------
+  // A worksheet needs vertical room under a question for a handwritten
+  // answer. A blank line cannot do it -- markdown discards blank lines, and
+  // should. Ruled underscore lines were tried first and rejected: they
+  // paginate badly and clutter the page. So one token, repeatable.
+  console.log('\n<space> makes writing room, and prints nothing');
+  const wS = scratchUnit();
+  const srcS = path.join(wS, 'g.md');
+  fs.writeFileSync(srcS, guide(
+    'Which car was faster? Write a claim.\n\n' +
+    '<space>\n\n' +
+    '<space>\n\n' +
+    'Give one sentence of evidence.\n'
+  ));
+  const rS = build(wS, srcS);
+  check('builds', rS.ok, rS.err.trim());
+  if (rS.ok) {
+    const {text, xml} = await textOf(path.join(wS, 'Test.docx'));
+    check('the token itself never reaches the page',
+          !text.includes('<space>') && !text.includes('space>'), text.slice(0, 200));
+    check('the questions around it still print',
+          text.includes('Write a claim.') && text.includes('one sentence of evidence'));
+    // Two tokens, two empty paragraphs, between the two questions.
+    const paras = xml.split('<w:p ').length + xml.split('<w:p>').length - 2;
+    check('it produced paragraphs rather than being dropped', paras > 2);
+  }
+
   // --- A missing course.js is refused, not guessed -----------------------
   console.log('\nA guides folder with no course.js is refused');
   const bare = scratch();

@@ -13,6 +13,7 @@
 //   ![alt](file)   image, own line   -> image
 //   ![[file]]      image, own line   -> image  (Obsidian's embed)
 //   | a | b |      table             -> table
+//   <space>        one blank line of writing room -> space
 //   text           paragraph         -> p
 //
 // Placeholders {{SAVE}}, {{PARTA}}, {{GRADING}} are substituted before parsing.
@@ -61,6 +62,13 @@ function parse(src, vars = {}) {
       blocks.push(["code", buf.join("\n")]);
       continue;
     }
+    // Room to write. A worksheet needs vertical space under a question, and
+    // a blank line cannot supply it -- markdown throws blank lines away, and
+    // that is the right thing everywhere else. Ruled underscore lines were
+    // tried first and rejected: they paginate badly and clutter the page.
+    // Repeat the token for more room.
+    if (/^<space>$/.test(line.trim())) { blocks.push(["space"]); i++; continue; }
+
     if (/^##\s+/.test(line)) { blocks.push(["h2", line.replace(/^##\s+/, "").trim()]); i++; continue; }
     if (/^#\s+/.test(line))  { blocks.push(["h1", line.replace(/^#\s+/, "").trim()]);  i++; continue; }
     if (/^>\s?/.test(line))  { blocks.push(["note", line.replace(/^>\s?/, "").trim()]); i++; continue; }
