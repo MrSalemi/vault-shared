@@ -94,6 +94,7 @@ command line skips extras.
 | `\| a \| b \|` + separator | table, first row is the header |
 | `` `code` `` `**bold**` `*italic*` | inline runs |
 | `$\frac{a}{b}$` | a real equation — see below |
+| `<space>` | blank space to write in, one line's worth |
 | `[label](target)`, `[[target\|label]]` | **the label only** |
 | `{{NAME}}` | whatever `course.js` says |
 
