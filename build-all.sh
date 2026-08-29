@@ -69,25 +69,60 @@ for arg in "$@"; do
     esac
 done
 
-# Where the finished guides go. This is course-specific, so it is not in the
-# builder: put it in deploy.txt beside the guides, as a path relative to the
-# Class Development folder. Override the whole thing with GUIDES=... if needed.
+# Where the finished guides go. This is course-specific, so NONE of it is in
+# the builder: deploy.txt beside the guides holds the whole path, starting with
+# the shared Drive folder it lives in --
+#
+#     Class Development/Robotics/Project Guides
+#
+# The first component is looked for under this machine's Google Drive mounts and
+# the rest is appended. That is what makes one line work on a machine that OWNS
+# the folder (.../My Drive/Class Development) and on one that reaches the same
+# folder through a shortcut (.../.shortcut-targets-by-id/<id>/Class Development),
+# where the account name, the user name and the shape of the path all differ.
+#
+# Override the whole thing with GUIDES=... if needed.
 #
 # Only looked up on a -d run. Building a guide does not need Class Development
 # mounted, and this used to refuse to build at all on a machine without it --
 # a sandbox, or a thread that mounted only the repo.
 if [ "$DEPLOY" = true ] && [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
     rel=$(grep -v '^[[:space:]]*#' deploy.txt | grep -v '^[[:space:]]*$' | head -1)
-    for root in \
-        "$HOME/Library/CloudStorage/GoogleDrive-rdsalemi@gmail.com/My Drive/Teaching/Class Development" \
-        /sessions/*/mnt/"Class Development"
-    do
-        if [ -d "$root/$rel" ]; then GUIDES="$root/$rel"; break; fi
-    done
-    if [ -z "$GUIDES" ]; then
-        echo "ERROR: deploy.txt names '$rel' and no Class Development has it" >&2
+    top=${rel%%/*}                      # the shared folder: "Class Development"
+    rest=${rel#*/}                      # the course part: "Robotics/Project Guides"
+    [ "$rest" = "$rel" ] && rest=""     # deploy.txt named the top folder only
+
+    # A folder can surface more than once -- two shortcuts to one Drive folder
+    # are two paths to the same place. Resolve each hit to its physical path and
+    # collapse duplicates, so that is not reported as an ambiguity.
+    matches=$(
+        find "$HOME/Library/CloudStorage" /sessions/*/mnt \
+             -maxdepth 4 -type d -name "$top" 2>/dev/null |
+        while IFS= read -r hit; do
+            target="$hit${rest:+/$rest}"
+            [ -d "$target" ] || continue
+            (cd "$target" && pwd -P)
+        done | sort -u
+    )
+    count=$(printf '%s' "$matches" | grep -c . || true)
+
+    if [ "$count" -eq 0 ]; then
+        echo "ERROR: deploy.txt names '$rel'." >&2
+        if [ -n "$rest" ]; then
+            echo "       No '$top' holding '$rest' was found under any Google Drive mount." >&2
+        else
+            echo "       No '$top' was found under any Google Drive mount." >&2
+        fi
+        echo "       Set GUIDES=/path/to/it to override." >&2
+        exit 1
+    elif [ "$count" -gt 1 ]; then
+        echo "ERROR: '$rel' matched more than one folder:" >&2
+        # Not printf '%s\n' $matches -- these paths have spaces in them.
+        printf '%s\n' "$matches" | sed 's/^/       /' >&2
+        echo "       Set GUIDES=/path/to/the/right/one." >&2
         exit 1
     fi
+    GUIDES="$matches"
 fi
 # Was a guide named on the command line? If not this is a full run, and a full
 # run is the only one that touches extras.txt.
