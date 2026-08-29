@@ -14,8 +14,20 @@ const PAGE_W = 9360;
 
 // The monospace face used for code blocks and inline backticks. Guides are read
 // and printed through Google Drive, so this must be a font Drive's viewer has.
-// Override for a one-off test with CODE_FONT="Courier New" ./build-all.sh ...
-const CODE_FONT = process.env.CODE_FONT || "Roboto Mono";
+//
+// Courier New, and not Roboto Mono, which this used to be. Roboto Mono installs
+// as a VARIABLE font (RobotoMono[wght].ttf), and LibreOffice's handling of those
+// is not dependable: on 2026-08-29 two Macs with byte-identical font files and
+// the same LibreOffice build disagreed -- one embedded RobotoMono-Regular, the
+// other silently fell back to Linux Libertine G, which is a SERIF PROPORTIONAL
+// face. Code set in a proportional font is a broken handout, and the failure is
+// invisible until you look at the PDF, because the build reports success either
+// way. Courier New ships with macOS and Windows, Drive's viewer has it, and
+// where it is missing LibreOffice substitutes Liberation Mono -- its exact
+// metric clone -- so every machine paginates the same.
+//
+// Override for a one-off test with CODE_FONT="Roboto Mono" ./build-all.sh ...
+const CODE_FONT = process.env.CODE_FONT || "Courier New";
 
 // Readability settings, in Word's units: run sizes are half-points, so 24 is
 // 12pt; `line` is twentieths of a point, so 360 against 12pt text is 1.5-line
@@ -415,12 +427,22 @@ async function build(outPath, ver, blocks, contentDir) {
        new Paragraph({children: [new TextRun({
          text: "This page left blank.", size: 18, italics: true, color: "A6A6A6"})]})]
     : [];
+  // Carlito, not Calibri. Calibri ships with Microsoft Office, so whether a
+  // machine has it -- and how many of its four faces -- is an accident of what
+  // else is installed. A Mac with only Regular and Bold synthesises a slanted
+  // Regular for italic text, and a synthesised slant is not the width of a real
+  // italic, so the same guide paginates differently on two machines. Carlito is
+  // the free metric-compatible clone, it installs as a complete family
+  // (brew install --cask font-carlito), and every machine then lays out from
+  // the same file rather than from something merely compatible.
+  // Override for a one-off test with BODY_FONT="Calibri" ./build-all.sh ...
+  const BODY_FONT = process.env.BODY_FONT || "Carlito";
   const doc = new Document({
     styles: {default: {
-      document: {run: {font: "Calibri", size: BODY_SIZE}},
-      title: {run: {font: "Calibri", size: 36, bold: true, color: "000000"}},
-      heading1: {run: {font: "Calibri", size: 30, bold: true, color: "000000"}},
-      heading2: {run: {font: "Calibri", size: 25, bold: true, color: "000000"}},
+      document: {run: {font: BODY_FONT, size: BODY_SIZE}},
+      title: {run: {font: BODY_FONT, size: 36, bold: true, color: "000000"}},
+      heading1: {run: {font: BODY_FONT, size: 30, bold: true, color: "000000"}},
+      heading2: {run: {font: BODY_FONT, size: 25, bold: true, color: "000000"}},
     }},
     numbering: {config: [
       {reference: "gb", levels: [{level: 0, format: LevelFormat.BULLET, text: "•",
