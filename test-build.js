@@ -149,15 +149,20 @@ async function main() {
           text.includes('Widget') && !text.includes('WidgetPicture'));
   }
 
-  // --- Print readability: 12pt, 1.5 spacing, ragged right ----------------
+  // --- Print readability: 12pt, open spacing, ragged right ---------------
   // Guides are printed and read on paper, some of them by dyslexic students.
-  // The standard print guidance asks for 12pt or larger, line spacing near
-  // 1.5, and left-aligned rather than justified text. All three are cheap and
-  // all three are easy to lose in a later edit, which is why they are pinned
-  // here rather than left to a default: Word's own default alignment is left,
-  // so a justified guide would come from a style someone added, and nothing
-  // would fail.
-  console.log('\nBody text is 12pt, 1.5-spaced, and left-aligned');
+  // The standard print guidance asks for 12pt or larger, line spacing well
+  // above single, and left-aligned rather than justified text. All three are
+  // cheap and all three are easy to lose in a later edit, which is why they are
+  // pinned here rather than left to a default: Word's own default alignment is
+  // left, so a justified guide would come from a style someone added, and
+  // nothing would fail.
+  //
+  // The spacing check is a floor, not an exact value. Ray compared rendered
+  // pages at 1.2, 1.3 and 1.5 on 2026-08-29 and settled on 1.2, and the number
+  // may move again. What must not happen is a guide quietly going back to
+  // single spacing, so the test guards the decision rather than the digit.
+  console.log('\nBody text is 12pt, open-spaced, and left-aligned');
   const w9 = scratchUnit();
   const src9 = path.join(w9, 'g.md');
   fs.writeFileSync(src9, guide(
@@ -170,7 +175,9 @@ async function main() {
   if (r9.ok) {
     const {xml} = await textOf(path.join(w9, 'Test.docx'));
     check('body runs are 12pt', /<w:sz w:val="24"\/>/.test(xml));
-    check('line spacing is 1.5', /w:line="360"/.test(xml));
+    const lineVal = Number((xml.match(/w:line="(\d+)"/) || [])[1]);
+    check('line spacing is comfortably above single',
+          lineVal >= 276, `w:line="${lineVal}" (240 is single)`);
     check('paragraphs say left, explicitly',
           /<w:jc w:val="left"\/>/.test(xml));
     check('nothing on the page is justified',

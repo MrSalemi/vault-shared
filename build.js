@@ -49,9 +49,19 @@ const CODE_FONT = process.env.CODE_FONT || "Courier New";
 // nothing today. It is there so that a style added later cannot quietly
 // justify a guide, and so this decision is visible in the code rather than
 // resting on a default.
+// LINE is twentieths of a point, so against 12pt body text:
+//   240 = single   276 = 1.15   288 = 1.2   312 = 1.3   360 = 1.5
+// Try one without editing:  LINE=312 ./build-all.sh -f p00.md
+//
+// 1.2 and not the 1.5 this started at. Ray compared rendered pages at 1.2, 1.3
+// and 1.5 on 2026-08-29 and 1.5 read as airy rather than open -- the paragraphs
+// stopped holding together as blocks. 1.2 keeps the lines clearly separated,
+// which is what the guidance is protecting, without the page turning into a
+// ladder. The other two accessibility settings, 12pt and ragged-right, are
+// untouched and are doing most of the work.
 const BODY_SIZE = 24;
 const CODE_SIZE = 19;
-const LINE = 360;
+const LINE = Number(process.env.LINE) || 288;
 const ALIGN_BODY = AlignmentType.LEFT;
 
 // A rebuild of unchanged markdown produces an identical document, but not an
