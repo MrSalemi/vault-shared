@@ -296,7 +296,8 @@ cd ~/vaults/shared && npm install
 ```
 
 `node_modules/` is gitignored, so it is per-machine and per-clone. A fresh clone
-has none, and the failure is `Error: Cannot find module 'docx'`.
+has none, and `build-all.sh` now stops with the command to run rather than
+letting node die in a stack trace naming a module nobody asked about.
 
 ### Fonts
 
@@ -406,23 +407,23 @@ nothing else — **no LibreOffice, no Poppler, no fonts**. So a change can pass 
 a Mac with the full toolchain and fail there. That is exactly what happened at
 `9b109ff`.
 
-**This is automatic.** A `pre-push` hook runs `preflight.sh` and refuses the
-push if it fails — on your machine, in a few seconds, rather than letting a red
-Action out into the world. A gate you have to remember to run is not a gate.
+**This is automatic, and it installs itself.** A `pre-push` hook runs
+`preflight.sh` and refuses the push if it fails — on your machine, in a few
+seconds, rather than letting a red Action out into the world. A gate you have to
+remember to run is not a gate.
 
-It needs one config line **per clone**, because git does not track `.git/hooks`
-and a fresh clone has no hooks at all:
-
-```bash
-cd ~/vaults/shared
-git config core.hooksPath .githooks
-```
-
-Check it took with `git config --get core.hooksPath` — it should print
-`.githooks`. If it prints nothing, the hook is not running and pushes are
-unguarded.
+Git does not track `.git/hooks`, so a fresh clone has no hooks and would need
+`git config core.hooksPath .githooks` run by hand. That is a thing somebody has
+to remember, and a thing somebody has to remember is a bug with a delay on it.
+So **`build-all.sh` wires it** on the first build after a clone, prints one
+`note:` line, and never mentions it again. Building a guide is the one action
+that happens on every machine constantly, so the hook is in place long before
+anyone tries to push.
 
 To push past it deliberately: `git push --no-verify`.
+
+To confirm it is wired: `git -C ~/vaults/shared config --get core.hooksPath`
+should print `.githooks`.
 
 You can also run the gate on its own, from anywhere:
 

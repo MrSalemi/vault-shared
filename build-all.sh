@@ -51,6 +51,38 @@ set -e
 # where they were one folder, still works.
 BUILDER=$(cd "$(dirname "$0")" && pwd)
 HERE=${GUIDE_SRC:-$(pwd)}
+
+# Wire the builder's pre-push hook, if it is not wired already.
+#
+# git does not track .git/hooks, so a fresh clone of the builder has none and
+# pushes go out unguarded. The fix is one `git config core.hooksPath .githooks`
+# per clone -- which is a thing somebody has to remember, and a thing somebody
+# has to remember is a bug with a delay on it. So it happens here instead:
+# building a guide is the one action that happens on every machine, constantly,
+# and this costs a single git call once and nothing ever after.
+#
+# Silent and best-effort on purpose. A read-only checkout, a locked config, or
+# no git at all must never stop a guide from building five minutes before class.
+if [ -d "$BUILDER/.githooks" ] && [ -e "$BUILDER/.git" ] \
+   && command -v git >/dev/null 2>&1; then
+    if [ -z "$(git -C "$BUILDER" config --get core.hooksPath 2>/dev/null)" ]; then
+        git -C "$BUILDER" config core.hooksPath .githooks 2>/dev/null \
+            && echo "note: wired the builder's pre-push hook (one time)"
+    fi
+fi
+
+# The builder's one npm dependency. node_modules is gitignored, so it is
+# per-machine and a fresh clone has none. Without this the first build dies in
+# a node stack trace naming a module nobody asked about, which is a poor way to
+# learn you needed one command.
+if [ ! -d "$BUILDER/node_modules" ]; then
+    echo "ERROR: the builder's dependencies are not installed." >&2
+    echo "       cd $BUILDER && npm install" >&2
+    echo "" >&2
+    echo "       Needs network. The school network blocks npm, so this has to" >&2
+    echo "       happen at home. It is a one-time install per machine." >&2
+    exit 1
+fi
 # A guide is a letter and two digits: e07.md here, p07.md in robotics. Never
 # *.md, which would sweep up a README or a note left in the folder.
 GLOB='[a-z][0-9][0-9].md'
