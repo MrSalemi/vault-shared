@@ -1,6 +1,8 @@
 #!/bin/bash
 # Build the printable guides from markdown, pad odd page counts, and report.
-# V06
+# V07
+#
+# See TOOLS.md for what this needs installed and what must pass before a push.
 #
 #   ./build-all.sh            build every guide that needs it
 #   ./build-all.sh e02.md     build just one
@@ -42,11 +44,11 @@ set -e
 #   HERE     where the guides live: the eNN.md or pNN.md, images/, course.js,
 #            and the built PDFs.
 #
-# They are separate folders: the builder is a submodule (checked out as
-# shared/) used by nhsengineering, nhsrobotics, advrobotics, and any future
-# vault, so nothing below may assume it sits beside the guides. Run this
-# script from the folder holding the guides. The old layout, where they
-# were one folder, still works.
+# They are separate folders: the builder is one clone at ~/vaults/shared,
+# symlinked into nhsengineering, nhsrobotics, advrobotics, physics and any
+# future vault as shared/, so nothing below may assume it sits beside the
+# guides. Run this script from the folder holding the guides. The old layout,
+# where they were one folder, still works.
 BUILDER=$(cd "$(dirname "$0")" && pwd)
 HERE=${GUIDE_SRC:-$(pwd)}
 # A guide is a letter and two digits: e07.md here, p07.md in robotics. Never
@@ -132,7 +134,14 @@ if [ ${#FILES[@]} -eq 0 ]; then FILES=($GLOB); NAMED=false; fi
 # Change any of these and every guide is stale: they decide what lands on the
 # page. course.js counts too -- it holds the course's {{GRADING}} and the rest,
 # and it lives here with the guides, not in the builder.
-BUILDER_FILES=("$BUILDER/build.js" "$BUILDER/parse.js" "$BUILDER/make.js")
+#
+# math.js was missing from this list until 2026-08-30. build.js requires it, so
+# it decides what lands on the page like the rest of them -- but an edit to it
+# left every guide looking current, the next build said "up to date", and the
+# change silently did not appear. Anything build.js or parse.js requires belongs
+# here. topdf.js does not: the guide chain converts with soffice directly, and
+# topdf.js is only used by course-side scripts like Robotics' worksheet.js.
+BUILDER_FILES=("$BUILDER/build.js" "$BUILDER/parse.js" "$BUILDER/make.js" "$BUILDER/math.js")
 [ -f course.js ] && BUILDER_FILES+=("course.js")
 
 # node writes the .docx, LibreOffice paginates it, poppler counts the pages.

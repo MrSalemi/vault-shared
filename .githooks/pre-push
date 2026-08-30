@@ -1,0 +1,29 @@
+#!/bin/bash
+# Runs preflight.sh before every push. A failing push is refused here, on your
+# machine, in a few seconds — rather than going out, going red on GitHub, and
+# being found later by whoever pulls it.
+#
+# Installed by pointing git at this folder, once per clone:
+#
+#     git config core.hooksPath .githooks
+#
+# Hooks in .git/hooks are not tracked by git and do not survive a clone, which
+# is why this lives in .githooks/ and is committed. A fresh clone still needs
+# that one config line — see TOOLS.md.
+#
+# To push anyway, deliberately:  git push --no-verify
+
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+
+echo "pre-push: running preflight…"
+if "$HERE/preflight.sh"; then
+    exit 0
+fi
+
+cat >&2 <<'EOF'
+
+pre-push: REFUSED. preflight failed, so the GitHub Action would fail too.
+
+Fix it, or push anyway with:  git push --no-verify
+EOF
+exit 1

@@ -6,13 +6,20 @@ suite is needed to make a guide or to print one, and there is no editable copy
 to hand-edit by mistake. The markdown is the only copy anyone can edit. That
 used to be a rule people had to remember; now it is just true.
 
-**This repo is shared.** It is a submodule of `nhsengineering`, `nhsrobotics`,
-`advrobotics` and `physics` (and any future vault), each pinning its own
-commit, checked out as `shared/`. It holds no guides, no pictures and no
-course text — all of that lives with the course, and the builder is told
-where to find it.
+**This repo is shared.** One clone at `~/vaults/shared`, symlinked into
+`nhsengineering`, `nhsrobotics`, `advrobotics`, `physics` and `robonatick` as
+`shared/`. It holds no guides, no pictures and no course text — all of that
+lives with the course, and the builder is told where to find it.
 
-*V04*
+~~It is a submodule, each vault pinning its own commit.~~ — 2026-08-29: no
+longer. It is a symlink to a sibling directory, so an edit reaches every vault
+at once and there is no pin to bump. See nhsrobotics DECISIONS #45.
+
+**Changing this repo? Read [TOOLS.md](TOOLS.md) first** — what every tool is,
+the external programs and fonts it needs with working versions, and the
+`preflight.sh` gate that must pass before a push.
+
+*V05*
 
 ## What a guides folder looks like
 
@@ -43,8 +50,10 @@ through LibreOffice, which is slow, so this is the difference between a minute
 and a second. Odd page counts are padded to even, because printing is
 double-sided.
 
-Needs `node`, `soffice` (LibreOffice) and `pdftoppm` (Poppler) on `PATH`;
-`build-all.sh` checks and names whichever is missing.
+Needs `node`, `soffice` (LibreOffice) and `pdftoppm` (Poppler) on `PATH`, the
+**Carlito** font installed, and `npm install` run once in `shared/`.
+`build-all.sh` names whichever program is missing; a missing font does not
+announce itself, which is why [TOOLS.md](TOOLS.md) §3 exists.
 
 ## course.js
 
@@ -167,7 +176,17 @@ has nothing to pair with. Write `\$` for a literal dollar next to another.
 
 ## Changing this repo
 
-A change lands in the other course the moment its pin moves. **Bumping a pin
-means rebuilding and eyeballing the guides in both courses** — pagination is the
-shared failure mode and it fails quietly. `test-build.js` covers the link rules,
-the placeholder contract and build determinism, but it cannot see a page.
+**[TOOLS.md](TOOLS.md) is the operator manual — read it before editing.**
+
+~~A change lands in the other course the moment its pin moves.~~ — 2026-08-29:
+there is no pin. A change lands in **all five vaults immediately**, because they
+all symlink one clone. Nothing is holding any course back on an older version.
+
+So: **rebuild and eyeball the guides in every course you have touched.**
+Pagination is the shared failure mode and it fails quietly. `test-build.js`
+covers the link rules, the placeholder contract, math, print readability, deploy
+behaviour and build determinism — but it reads `.docx` XML and cannot see a
+page.
+
+Before pushing, run `./preflight.sh`. It runs the suite the way your machine is
+and again the way the CI runner sees it, which has no LibreOffice and no fonts.

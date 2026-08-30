@@ -27,6 +27,7 @@ if (!fs.readdirSync(GUIDES).some(f => /^[a-z]\d+\.md$/.test(f))) {
 }
 
 let failures = 0;
+let skipped = 0;
 function check(name, ok, detail) {
   console.log((ok ? '  PASS  ' : '  FAIL  ') + name);
   if (!ok) {
@@ -34,6 +35,27 @@ function check(name, ok, detail) {
     if (detail) console.log('        ' + detail);
   }
 }
+
+// Most of this file builds .docx only, which needs nothing but node. A few
+// checks need a real PDF, which needs LibreOffice. CI deliberately does not
+// install it -- the run stays fast and needs no extra runner setup -- so those
+// checks announce themselves as skipped rather than failing. A skip is loud on
+// purpose: a check that quietly vanishes is worse than one that fails.
+function skip(name, why) {
+  console.log('  SKIP  ' + name + '  (' + why + ')');
+  skipped++;
+}
+
+// NO_SOFFICE=1 pretends LibreOffice is absent even where it is installed. That
+// is how a machine with LibreOffice reproduces the CI runner, which has none —
+// run both ways before pushing and you cannot be surprised by the Action.
+const HAS_SOFFICE = process.env.NO_SOFFICE === '1' ? false : (() => {
+  const dirs = (process.env.PATH || '').split(path.delimiter);
+  if (dirs.some(d => d && fs.existsSync(path.join(d, 'soffice')))) return true;
+  // The macOS installer does not put soffice on PATH; build-all.sh looks here
+  // too, so the test must agree with it about what "available" means.
+  return fs.existsSync('/Applications/LibreOffice.app/Contents/MacOS/soffice');
+})();
 
 // Run make.js with the temp folder as the working directory, so the .docx it
 // writes lands there. Pictures and sibling guides resolve against the folder
@@ -436,15 +458,17 @@ async function main() {
   const past = new Date(Date.now() - 60_000);
   fs.utimesSync(stalePdf, past, past);
   const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-bin-'));
+  // Search the REAL PATH, not a hardcoded list of directories. This used to
+  // look only in /usr/bin, /bin and /usr/local/bin, which stopped finding node
+  // the evening of 2026-08-29 when Ray's node moved from a /usr/local pkg to
+  // Homebrew's /opt/homebrew. The test then withheld node from its own fixture
+  // and failed complaining about the wrong tool. Found 2026-08-30.
+  const pathDirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
   for (const t of ['node', 'dirname', 'grep', 'head', 'sed', 'awk', 'cat',
                    'ls', 'mktemp', 'rm', 'mkdir', 'cp', 'mv', 'basename',
                    'wc', 'sort', 'tr', 'sh', 'bash', 'env']) {
-    for (const dir of ['/usr/bin', '/bin', '/usr/local/bin']) {
-      if (fs.existsSync(path.join(dir, t))) {
-        fs.symlinkSync(path.join(dir, t), path.join(bin, t));
-        break;
-      }
-    }
+    const found = pathDirs.map(d => path.join(d, t)).find(p => fs.existsSync(p));
+    if (found) fs.symlinkSync(found, path.join(bin, t));
   }
   let noTools;
   try {
@@ -454,10 +478,17 @@ async function main() {
   } catch (e) {
     noTools = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
   }
-  check('a run that must convert still refuses without LibreOffice',
+  check('a run that must convert still refuses without the conversion tools',
         !noTools.ok, noTools.out.trim());
-  check('and it names the tool that is missing',
-        /not on PATH:.*soffice/.test(noTools.out), noTools.out.trim());
+  // Which tool it names depends on the machine, and asserting "soffice"
+  // specifically was wrong: build-all.sh adds /Applications/LibreOffice.app to
+  // PATH as a macOS fallback, so on a Mac with LibreOffice installed soffice is
+  // genuinely available and pdftoppm is the one that is missing. What matters
+  // is that it refuses and names a real culprit, not which culprit it is.
+  check('and it names a conversion tool that is missing',
+        /not on PATH:.*(soffice|pdftoppm)/.test(noTools.out), noTools.out.trim());
+  check('and node was not the thing it complained about',
+        !/not on PATH:.*\bnode\b/.test(noTools.out), noTools.out.trim());
 
   // --- A guide can deploy into a subfolder of the target -----------------
   // Physics keeps a section's worksheet, answer sheet and teaching plan
@@ -483,17 +514,25 @@ async function main() {
       return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
     }
   };
-  const rF = runF();
-  check('builds and deploys', rF.ok, rF.out.trim());
-  if (rF.ok) {
-    check('a guide naming a folder lands in it',
-          fs.existsSync(path.join(target, '1.2', 'Sub.pdf')),
-          fs.readdirSync(target).join(', '));
-    check('a guide with no folder still lands at the top',
-          fs.existsSync(path.join(target, 'Top.pdf')),
-          fs.readdirSync(target).join(', '));
-    check('the subfolder guide did NOT also land at the top',
-          !fs.existsSync(path.join(target, 'Sub.pdf')));
+  // This one deploys for real, so it converts, so it needs LibreOffice.
+  if (!HAS_SOFFICE) {
+    skip('builds and deploys', 'no soffice');
+    skip('a guide naming a folder lands in it', 'no soffice');
+    skip('a guide with no folder still lands at the top', 'no soffice');
+    skip('the subfolder guide did NOT also land at the top', 'no soffice');
+  } else {
+    const rF = runF();
+    check('builds and deploys', rF.ok, rF.out.trim());
+    if (rF.ok) {
+      check('a guide naming a folder lands in it',
+            fs.existsSync(path.join(target, '1.2', 'Sub.pdf')),
+            fs.readdirSync(target).join(', '));
+      check('a guide with no folder still lands at the top',
+            fs.existsSync(path.join(target, 'Top.pdf')),
+            fs.readdirSync(target).join(', '));
+      check('the subfolder guide did NOT also land at the top',
+            !fs.existsSync(path.join(target, 'Sub.pdf')));
+    }
   }
 
   // The other half of the same rule: -d still refuses, and still says why.
@@ -503,6 +542,11 @@ async function main() {
   check('and the message names the folder deploy.txt asked for',
         /No Such Folder Anywhere/.test(withDeploy.out), withDeploy.out.trim());
 
+  if (skipped) {
+    console.log(`\n${skipped} check(s) skipped — no LibreOffice on this machine.`);
+    console.log('Those cover PDF conversion and deployment. Run this on a machine');
+    console.log('with soffice before trusting a change to either.');
+  }
   console.log(failures === 0
     ? '\nAll checks passed.'
     : `\n${failures} check(s) failed.`);

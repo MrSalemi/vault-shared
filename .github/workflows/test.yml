@@ -2,21 +2,33 @@ name: test
 
 on: push
 
+# This runner is deliberately bare: node and nothing else. No LibreOffice, no
+# Poppler, no fonts. That keeps the run at about fifteen seconds and means a
+# push is never blocked on installing an office suite.
+#
+# The cost is that checks needing a real PDF cannot run here. They announce
+# themselves as SKIP rather than failing — see the HAS_SOFFICE / NO_SOFFICE
+# note in test-build.js — so this job proves the .docx layer and nothing more.
+#
+# Before pushing, run ./preflight.sh. It runs the suite as your machine is AND
+# again with NO_SOFFICE=1, which is exactly what this runner sees. If preflight
+# passes, this passes.
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # 22 is the floor the builder promises to work on. Ray's Macs run
+      # considerably newer, so this is here to catch a syntax or API that only
+      # exists on the newest node — which a Mac would never notice.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
 
       # test-fixtures/ is synthetic content for CI only, not a real course's
-      # guides -- see test-fixtures/course.js. Builds .docx only, no
-      # LibreOffice/soffice involved, so this stays fast and needs no
-      # extra runner setup.
+      # guides -- see test-fixtures/course.js.
       - run: node test-build.js test-fixtures
