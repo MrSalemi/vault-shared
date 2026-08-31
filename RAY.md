@@ -1,8 +1,8 @@
 # Ray Salemi — working profile
 
-Read by every thread when it starts (via start-thread), from wherever this
-vault's `shared/` submodule is checked out. Describes Ray, not any one
-project — project-specific state stays in that vault's own PROJECT.md and
+Read by every thread when it starts (via start-thread), from `~/vaults/shared`,
+which every vault reaches through its `shared/` symlink. Describes Ray, not any
+one project — project-specific state stays in that vault's own PROJECT.md and
 DECISIONS.md.
 
 ## Communication style
