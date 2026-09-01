@@ -55,7 +55,7 @@ one.
 |---|---|---|
 | 2026-09-16 (Wed) | R2 | |
 | 2026-10-07 (Wed) | R1 | |
-| 2026-11-25 (Wed) | — | Listed as a non-cycle day in the source sheet; the district calendar has school in session with an early release. Unresolved — see below. |
+| 2026-11-25 (Wed) | none | School is open; no cycle block runs. See below. |
 | 2026-12-09 (Wed) | B2 | Also HS Conference |
 | 2026-12-23 (Wed) | B1 | |
 | 2027-01-13 (Wed) | B1 | |
@@ -74,12 +74,19 @@ and elementary only, and 2027-05-07 is a kindergarten-only closure.
 district calendar names the day and not the bell schedule. Do not assume a
 normal 80-minute block on any date above.
 
-**The 2026-11-25 conflict is open.** The source sheet puts it in the Schedule
-column as a named non-cycle day, which is how this file has always carried it,
-so no section meets and no cycle code advances. The district calendar shows it
-as an early release day for all students, which normally means school is in
-session. Resolving it one way changes every course's day count, so it is left
-as the sheet has it until Ray settles which is right.
+**2026-11-25 is open but carries no cycle day, on purpose.** The district
+calendar has it as an early release day for all students, so school is in
+session — it is not a closure like Thanksgiving the next day. Its cycle code is
+blank because **the cycle is deliberately held rather than advanced: spending a
+B1 on a half day would waste it.** 11/24 is R1, and the next B1 waits until
+12/01. Confirmed by Ray, 2026-09-01.
+
+The rotation is otherwise a strict R1 → B1 → R2 → B2, and holidays do not
+advance it either. Do not "fix" the blank at 11/25.
+
+**Every other early release above does carry a cycle day.** 2026-09-16 sits in
+sequence as R2 with no pause, and the rest follow the same way. Those days
+shorten a real class; 11/25 removes one.
 
 ## Non-cycle days (holidays, breaks, special days)
 
