@@ -8,6 +8,7 @@
 - Robotics Red 1 — `nhsrobotics/CALENDAR.md`
 - Advanced Robotics — `advrobotics/CALENDAR.md` (not in the source calendar; file explains why)
 - Physics Blue 2, Red 2, Red 3 — `physics/CALENDAR.md`
+- RoboNatick (after-school FTC program, not a course) — `robonatick/CALENDAR.md` (not in the source calendar; dates entered by hand)
 
 ## Column legend (from row 1 of the source file)
 
