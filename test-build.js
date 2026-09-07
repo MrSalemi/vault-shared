@@ -495,6 +495,67 @@ async function main() {
   check('and node was not the thing it complained about',
         !/not on PATH:.*\bnode\b/.test(noTools.out), noTools.out.trim());
 
+  // --- <newpage> starts a new page ---------------------------------------
+  // Added for physics' 1.8 motion lab, where each station's table and graph
+  // box have to be looked at together. A fenced box is one unbreakable block,
+  // so the flow always put a graph on the page after its own table, and no
+  // blank-line count fixed it — the space left at the foot of a page was
+  // always enough to pull the next station's heading and table up.
+  //
+  // Checked in the XML rather than the PDF, so it runs on the CI runner.
+  console.log('\n<newpage> starts a new page');
+  const wNP = scratchUnit();
+  const npMd = path.join(wNP, 'np.md');
+  fs.writeFileSync(npMd, guide('Before the break.\n\n<newpage>\n\nAfter the break.', 'NP.docx'));
+  const rNP = build(wNP, npMd);
+  check('builds', rNP.ok, rNP.err.trim());
+  if (rNP.ok) {
+    const {text, xml} = await textOf(path.join(wNP, 'NP.docx'));
+    check('one page break is emitted',
+          (xml.match(/<w:pageBreakBefore\/>/g) || []).length === 1,
+          (xml.match(/<w:pageBreakBefore\/>|<w:br[^>]*>/g) || []).join(' '));
+    // The break must ride on the paragraph that starts the new page, not sit
+    // in a paragraph of its own on the page above. A carrier paragraph needs
+    // a line where it sits, so a break asked for at the foot of a nearly full
+    // page cannot fit there, moves down, and breaks from the next page --
+    // leaving a blank one behind. That is a silent extra sheet in a student's
+    // hand, so the wrong mechanism is asserted against by name.
+    check('the break is not a standalone break paragraph',
+          !/<w:br w:type="page"\/>/.test(xml),
+          (xml.match(/<w:br[^>]*>/g) || []).join(' '));
+    check('the token itself does not print',
+          !/newpage/.test(text), text);
+    check('the text on both sides survives',
+          /Before the break\./.test(text) && /After the break\./.test(text), text);
+  }
+
+  // A break with nothing after it must be dropped. PAD_EVEN adds its own
+  // trailing break to pad an odd guide to even, so a <newpage> left at the end
+  // of a file would produce a second empty page — a blank sheet in a student's
+  // hand, and the build would report success.
+  const trailMd = path.join(wNP, 'trail.md');
+  fs.writeFileSync(trailMd, guide('Only paragraph.\n\n<newpage>', 'Trail.docx'));
+  const rTrail = build(wNP, trailMd);
+  check('a guide ending in <newpage> builds', rTrail.ok, rTrail.err.trim());
+  if (rTrail.ok) {
+    const {xml} = await textOf(path.join(wNP, 'Trail.docx'));
+    check('and emits no trailing page break',
+          !/<w:pageBreakBefore\/>/.test(xml) && !/<w:br w:type="page"\/>/.test(xml));
+  }
+
+  // Nothing that does not ask for a break may get one. Every guide in every
+  // vault predates this construct, so a stray break here would repaginate
+  // five courses at once.
+  const plainMd = path.join(wNP, 'plainnp.md');
+  fs.writeFileSync(plainMd, guide('No break anywhere.', 'PlainNP.docx'));
+  const rPlain = build(wNP, plainMd);
+  check('a guide with no <newpage> builds', rPlain.ok, rPlain.err.trim());
+  if (rPlain.ok) {
+    const {xml} = await textOf(path.join(wNP, 'PlainNP.docx'));
+    check('and gets no page break at all',
+          !/<w:pageBreakBefore\/>/.test(xml) && !/<w:br w:type="page"\/>/.test(xml));
+  }
+
   // --- A guide's letter may be either case -------------------------------
   // The glob was '[a-z][0-9][0-9].md' until 2026-09-07, so physics' lab guide
   // L18.md was not a guide as far as build-all.sh was concerned. The failure

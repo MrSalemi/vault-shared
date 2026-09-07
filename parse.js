@@ -14,6 +14,7 @@
 //   ![[file]]      image, own line   -> image  (Obsidian's embed)
 //   | a | b |      table             -> table
 //   <space>        one blank line of writing room -> space
+//   <newpage>      start a new page here          -> newpage
 //   text           paragraph         -> p
 //
 // Placeholders {{SAVE}}, {{PARTA}}, {{GRADING}} are substituted before parsing.
@@ -68,6 +69,15 @@ function parse(src, vars = {}) {
     // tried first and rejected: they paginate badly and clutter the page.
     // Repeat the token for more room.
     if (/^<space>$/.test(line.trim())) { blocks.push(["space"]); i++; continue; }
+
+    // Start a new page here. Some sheets are laid out per page rather than as
+    // a run of prose -- the 1.8 motion lab gives each station a table and a
+    // graph box that have to be looked at together, and a box is one
+    // unbreakable block, so the flow puts every graph on the page after its
+    // own table. No amount of resizing fixes that: the space left at the foot
+    // of a page is always enough to pull the next station's heading and table
+    // up, and then its box does not fit. See physics DECISIONS #32 and #49.
+    if (/^<newpage>$/.test(line.trim())) { blocks.push(["newpage"]); i++; continue; }
 
     if (/^##\s+/.test(line)) { blocks.push(["h2", line.replace(/^##\s+/, "").trim()]); i++; continue; }
     if (/^#\s+/.test(line))  { blocks.push(["h1", line.replace(/^#\s+/, "").trim()]);  i++; continue; }

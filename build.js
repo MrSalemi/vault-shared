@@ -7,7 +7,8 @@ const path = require('path');
 const {mathRun} = require('./math');
 const {Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow,
        TableCell, WidthType, ShadingType, LevelFormat, AlignmentType,
-       Footer, PageNumber, BorderStyle, PageBreak, ImageRun, VerticalAlign} = d;
+       Footer, PageNumber, BorderStyle, PageBreak, ImageRun, VerticalAlign,
+       LineRuleType} = d;
 
 const CODE_BORDER = "9A9A9A";
 const PAGE_W = 9360;
@@ -140,7 +141,8 @@ function runs(text, base = {}) {
 function para(text, o = {}) {
   return new Paragraph({children: runs(text, o.base || {}),
                         alignment: ALIGN_BODY,
-                        spacing: {after: o.after ?? 120, line: LINE}});
+                        spacing: {after: o.after ?? 120, line: LINE},
+                        ...(o.brk || {})});
 }
 function bulletP(text) {
   return new Paragraph({children: runs(text),
@@ -328,6 +330,22 @@ function render(blocks, contentDir) {
     const next = at + 1 < blocks.length ? blocks[at + 1][0] : null;
     const nextIsImage = next === "image";
     const nextStartsSection = next === "h1" || next === "h2" || next === "title";
+    // Did a <newpage> come immediately before this block? If so this block
+    // starts a page, and it says so itself with Word's pageBreakBefore rather
+    // than a break parked on the page above. Blocks that are not a single
+    // paragraph -- a table, a picture, a code box -- get a zero-height
+    // carrier paragraph instead, which is safe because it lands at the TOP of
+    // the new page where there is always room for it.
+    const breaking = at > 0 && blocks[at - 1][0] === "newpage";
+    const brk = breaking ? {pageBreakBefore: true} : {};
+    if (breaking && (kind === "table" || kind === "image" || kind === "code" ||
+                     kind === "b" || kind === "n")) {
+      out.push(new Paragraph({
+        pageBreakBefore: true,
+        children: [new TextRun({text: "", size: 2})],
+        spacing: {before: 0, after: 0, line: 1, lineRule: LineRuleType.EXACTLY},
+      }));
+    }
     // A heading is set by Word's own style and takes plain text, not runs, so
     // an equation in one would print as its own source. Refused rather than
     // shipped: silently printing "$\frac{a}{b}$" on a handout is the failure
@@ -342,28 +360,42 @@ function render(blocks, contentDir) {
     }
     if (kind === "title") {
       out.push(new Paragraph({text: payload, heading: HeadingLevel.TITLE,
-                              keepNext: true, spacing: {after: 120}}));
+                              keepNext: true, spacing: {after: 120}, ...brk}));
     } else if (kind === "h1") {
       out.push(new Paragraph({text: payload, heading: HeadingLevel.HEADING_1,
-                              keepNext: true, spacing: {before: 340, after: 160}}));
+                              keepNext: true, spacing: {before: 340, after: 160}, ...brk}));
     } else if (kind === "h2") {
       out.push(new Paragraph({text: payload, heading: HeadingLevel.HEADING_2,
-                              keepNext: true, spacing: {before: 260, after: 120}}));
+                              keepNext: true, spacing: {before: 260, after: 120}, ...brk}));
     } else if (kind === "lead") {
       out.push(new Paragraph({children: runs(payload, {bold: true}),
                               alignment: ALIGN_BODY,
-                              spacing: {after: 180, line: LINE}}));
+                              spacing: {after: 180, line: LINE}, ...brk}));
     } else if (kind === "note") {
       out.push(new Paragraph({children: runs(payload, {italics: true, color: "595959"}),
                               alignment: ALIGN_BODY,
-                              spacing: {after: 180, line: LINE}}));
+                              spacing: {after: 180, line: LINE}, ...brk}));
     } else if (kind === "space") {
       // Writing room on a worksheet. An empty run rather than a blank line,
       // because Word collapses a paragraph with nothing in it at all.
       out.push(new Paragraph({children: [new TextRun({text: "", size: BODY_SIZE})],
                               spacing: {after: 120, line: LINE}}));
+    } else if (kind === "newpage") {
+      // Nothing is emitted here. The break is carried by the block that
+      // FOLLOWS, as Word's own pageBreakBefore on that paragraph -- see the
+      // `breaking` flag above. A paragraph holding a PageBreak run was tried
+      // first and is wrong: it needs a line on the page it sits on, so a
+      // break asked for at the foot of a nearly full page does not fit
+      // there, moves to the next page, and breaks from THERE -- leaving a
+      // blank page behind. Zeroing its height did not help. The 1.8 lab did
+      // exactly this: its front matter ended 20 pt short of the margin and
+      // page 2 came out empty.
+      //
+      // A <newpage> with nothing after it therefore breaks nothing, which is
+      // what we want: PAD_EVEN adds its own trailing break to pad an odd
+      // guide to even, and a second one would print a stray blank sheet.
     } else if (kind === "p") {
-      out.push(para(payload));
+      out.push(para(payload, {brk}));
     } else if (kind === "b") {
       payload.forEach(t => out.push(bulletP(t)));
       out.push(new Paragraph({children: [], spacing: {after: 60}}));

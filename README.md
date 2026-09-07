@@ -105,6 +105,7 @@ command line skips extras.
 | `` `code` `` `**bold**` `*italic*` | inline runs |
 | `$\frac{a}{b}$` | a real equation — see below |
 | `<space>` | blank space to write in, one line's worth |
+| `<newpage>` | start a new page here |
 | `[label](target)`, `[[target\|label]]` | **the label only** |
 | `{{NAME}}` | whatever `course.js` says |
 
@@ -174,6 +175,12 @@ has nothing to pair with. Write `\$` for a literal dollar next to another.
   Refused rather than shipped.
 - **Length costs sheets, not pages.** 3 and 4 pages are both 2 sheets. Only an
   even-to-odd crossing matters.
+- **`<newpage>` is for sheets laid out per page, not for tidying a break.**
+  Tuning where a page falls by adding or removing blank lines does not hold —
+  every fix moves the break onto something else. Use `<newpage>` when the
+  content genuinely is one unit per page, like a lab station whose table and
+  graph box have to be seen together. A `<newpage>` at the very end of a guide
+  is ignored, so it cannot produce a trailing blank page.
 
 ## Changing this repo
 
