@@ -83,20 +83,31 @@ if [ ! -d "$BUILDER/node_modules" ]; then
     echo "       happen at home. It is a one-time install per machine." >&2
     exit 1
 fi
-# A guide is a letter and two digits: e07.md here, p07.md in robotics, L18.md
-# for a physics lab. Never *.md, which would sweep up a README or a note left in
-# the folder.
+# A guide is a letter and its digits: e07.md here, p07.md in robotics,
+# w0107.md and L0108.md in physics. Never *.md, which would sweep up a README
+# or a note left in the folder.
 #
-# The letter may be either case. It was lowercase only until 2026-09-07, and
-# physics' L18.md was then not a guide as far as this script was concerned: a
-# full run never saw it, and an edit to it printed nothing at all rather than
-# failing. A silent omission is the worst of the three outcomes.
+# Two things were widened here on 2026-09-07, both after the same failure.
 #
-# Both halves of the range are written out on purpose. Under some LC_COLLATE
-# settings a bare [a-z] already matches an uppercase letter and under others it
-# does not, so [A-Za-z] is the only spelling that means the same thing
-# everywhere.
-GLOB='[A-Za-z][0-9][0-9].md'
+# The letter may be either case. It was lowercase only, and physics' L18.md was
+# then not a guide as far as this script was concerned: a full run never saw
+# it, and an edit to it printed nothing at all rather than failing.
+#
+# The digits are one or more, not exactly two. Physics names a source for the
+# unit as well as the lesson -- w0107.md is unit 1, lesson 7 -- because w07.md
+# means "the seventh worksheet in whichever folder you are looking at" and
+# every unit has one. Two digits ran out at Unit 10. Robotics and Engineering
+# still use two and are unaffected.
+#
+# A silent omission is the worst outcome available here, which is why this is
+# a widening rather than a second pattern to keep in step.
+#
+# Both halves of the letter range are written out on purpose: under some
+# LC_COLLATE settings a bare [a-z] already matches an uppercase letter and
+# under others it does not, so [A-Za-z] is the only spelling that means the
+# same thing everywhere. +([0-9]) needs extglob, switched on just below.
+shopt -s extglob
+GLOB='[A-Za-z]+([0-9]).md'
 if ! ls "$HERE"/$GLOB >/dev/null 2>&1 && ls "$BUILDER"/$GLOB >/dev/null 2>&1; then
     HERE=$BUILDER          # old layout: guides sit beside the builder
 fi

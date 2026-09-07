@@ -565,13 +565,19 @@ async function main() {
   // Nothing here converts. Both PDFs are written after their sources, so the
   // run reports "up to date" and never reaches LibreOffice -- which keeps this
   // check running on the CI runner, where there is none.
-  console.log('\nbuild-all.sh globs a guide whose letter is capitalized');
+  console.log('\nbuild-all.sh globs a guide by letter case and digit count');
   const wCase = scratch();
   fs.writeFileSync(path.join(wCase, 'course.js'), "module.exports = () => ({});\n");
   fs.writeFileSync(path.join(wCase, 'L18.md'), guide('A lab.', 'Lab.docx'));
   fs.writeFileSync(path.join(wCase, 'w18.md'), guide('A worksheet.', 'Sheet.docx'));
+  // Four digits: physics names a source for the unit as well as the lesson,
+  // because w07.md means "the seventh worksheet in whichever folder you happen
+  // to be looking at" and every unit has one. Robotics and Engineering still
+  // use two digits, so both widths have to work in the same glob.
+  fs.writeFileSync(path.join(wCase, 'w0107.md'), guide('Unit 1, lesson 7.', 'Unit.docx'));
   fs.writeFileSync(path.join(wCase, 'Lab.pdf'), 'not really a pdf');
   fs.writeFileSync(path.join(wCase, 'Sheet.pdf'), 'not really a pdf');
+  fs.writeFileSync(path.join(wCase, 'Unit.pdf'), 'not really a pdf');
   // The other half of the rule: widening the glob must not turn every stray
   // .md in the folder into a guide.
   fs.writeFileSync(path.join(wCase, 'README.md'), 'Not a guide.\n');
@@ -589,8 +595,10 @@ async function main() {
         /Lab\.pdf/.test(caseRun.out), caseRun.out.trim());
   check('it still saw the lowercase one',
         /Sheet\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('it saw the four-digit unit-and-lesson one',
+        /Unit\.pdf/.test(caseRun.out), caseRun.out.trim());
   check('and it swept up neither README.md nor Notes.md',
-        /\b0 built, 2 already current\b/.test(caseRun.out), caseRun.out.trim());
+        /\b0 built, 3 already current\b/.test(caseRun.out), caseRun.out.trim());
 
   // --- A guide can deploy into a subfolder of the target -----------------
   // Physics keeps a section's worksheet, answer sheet and teaching plan
