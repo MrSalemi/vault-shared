@@ -29,6 +29,7 @@ needs is there:
 ```
 guides/unit01/
   e00.md … e09.md      one guide per file, a letter and two digits
+                       the letter may be upper or lower case: L18.md is a guide
   images/              every picture the guides use
   course.js            what this course's {{PLACEHOLDERS}} say   (required)
   extras.txt           things that ship with the guides          (optional)

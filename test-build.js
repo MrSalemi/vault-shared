@@ -19,7 +19,12 @@ const JSZip = require('jszip');
 const MAKE = path.join(__dirname, 'make.js');
 const GUIDES = path.resolve(process.argv[2] || process.cwd());
 
-if (!fs.readdirSync(GUIDES).some(f => /^[a-z]\d+\.md$/.test(f))) {
+// A guide's name is a letter and two digits, and the letter may be either case
+// -- see build-all.sh's GLOB. This has to agree with it, or the suite quietly
+// stops testing whichever guides the script would have built.
+const GUIDE_NAME = /^[A-Za-z]\d+\.md$/;
+
+if (!fs.readdirSync(GUIDES).some(f => GUIDE_NAME.test(f))) {
   console.error(`no guides in ${GUIDES}`);
   console.error('run this from a unit folder, or name one:');
   console.error('  cd guides/unit01 && node ../../shared/test-build.js');
@@ -122,7 +127,7 @@ async function main() {
   // --- Every real guide still builds ------------------------------------
   console.log('Every guide builds');
   const work = scratch();
-  for (const md of fs.readdirSync(GUIDES).filter(f => /^[a-z]\d+\.md$/.test(f)).sort()) {
+  for (const md of fs.readdirSync(GUIDES).filter(f => GUIDE_NAME.test(f)).sort()) {
     const r = build(work, path.join(GUIDES, md));
     check(md, r.ok, r.err.trim());
   }
@@ -400,7 +405,7 @@ async function main() {
   // every part a reader ever sees must be.
   console.log('\nBuilding twice gives the same document');
   const w6 = scratch(), w7 = scratch();
-  const one = fs.readdirSync(GUIDES).filter(f => /^[a-z]\d+\.md$/.test(f)).sort()[0];
+  const one = fs.readdirSync(GUIDES).filter(f => GUIDE_NAME.test(f)).sort()[0];
   const ra2 = build(w6, path.join(GUIDES, one));
   const rb2 = build(w7, path.join(GUIDES, one));
   check('both build', ra2.ok && rb2.ok, (ra2.err + rb2.err).trim());
@@ -489,6 +494,42 @@ async function main() {
         /not on PATH:.*(soffice|pdftoppm)/.test(noTools.out), noTools.out.trim());
   check('and node was not the thing it complained about',
         !/not on PATH:.*\bnode\b/.test(noTools.out), noTools.out.trim());
+
+  // --- A guide's letter may be either case -------------------------------
+  // The glob was '[a-z][0-9][0-9].md' until 2026-09-07, so physics' lab guide
+  // L18.md was not a guide as far as build-all.sh was concerned. The failure
+  // was silent, which is what makes it worth a check: a full run simply never
+  // mentioned the file, and an edit to it produced nothing rather than an error.
+  //
+  // Nothing here converts. Both PDFs are written after their sources, so the
+  // run reports "up to date" and never reaches LibreOffice -- which keeps this
+  // check running on the CI runner, where there is none.
+  console.log('\nbuild-all.sh globs a guide whose letter is capitalized');
+  const wCase = scratch();
+  fs.writeFileSync(path.join(wCase, 'course.js'), "module.exports = () => ({});\n");
+  fs.writeFileSync(path.join(wCase, 'L18.md'), guide('A lab.', 'Lab.docx'));
+  fs.writeFileSync(path.join(wCase, 'w18.md'), guide('A worksheet.', 'Sheet.docx'));
+  fs.writeFileSync(path.join(wCase, 'Lab.pdf'), 'not really a pdf');
+  fs.writeFileSync(path.join(wCase, 'Sheet.pdf'), 'not really a pdf');
+  // The other half of the rule: widening the glob must not turn every stray
+  // .md in the folder into a guide.
+  fs.writeFileSync(path.join(wCase, 'README.md'), 'Not a guide.\n');
+  fs.writeFileSync(path.join(wCase, 'Notes.md'), 'Not a guide either.\n');
+  let caseRun;
+  try {
+    caseRun = {ok: true,
+               out: execFileSync(path.join(__dirname, 'build-all.sh'), [],
+                                 {cwd: wCase, stdio: 'pipe'}).toString()};
+  } catch (e) {
+    caseRun = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a full run succeeds', caseRun.ok, caseRun.out.trim());
+  check('it saw the guide whose letter is capitalized',
+        /Lab\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('it still saw the lowercase one',
+        /Sheet\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('and it swept up neither README.md nor Notes.md',
+        /\b0 built, 2 already current\b/.test(caseRun.out), caseRun.out.trim());
 
   // --- A guide can deploy into a subfolder of the target -----------------
   // Physics keeps a section's worksheet, answer sheet and teaching plan

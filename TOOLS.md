@@ -116,8 +116,10 @@ filename. What it does, in order:
 
 1. Works out where it lives (`BUILDER`) and where the guides are (`$(pwd)`, or
    `GUIDE_SRC`). Those are two different folders and it never assumes otherwise.
-2. Globs `[a-z][0-9][0-9].md` — a letter and two digits, so `p07.md` and `e01.md`
-   are guides and a `README.md` sitting in the folder is not.
+2. Globs `[A-Za-z][0-9][0-9].md` — a letter and two digits, so `p07.md`,
+   `e01.md` and `L18.md` are guides and a `README.md` sitting in the folder is
+   not. The letter may be either case; it was lowercase only until 2026-09-07,
+   and physics' `L18.md` was silently not a guide the whole time.
 3. On a `-d` run only, resolves the deploy target (§4).
 4. For each guide, decides whether it is stale: is the markdown, one of its
    pictures, `course.js`, or one of the builder's own `.js` files newer than the
