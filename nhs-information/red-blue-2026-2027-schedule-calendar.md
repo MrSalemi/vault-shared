@@ -40,6 +40,55 @@ Note: two "Last Day of School" entries appear (2027-06-11 and 2027-06-21) — li
 
 Marked across every course column in the source file, so they belong here rather than in any one course's calendar.
 
+## Early release (half) days
+
+**Not from the source sheet.** The `Red Blue 2627 Calendar` sheet's Notes column
+is empty and its Schedule column names only one short day (2026-11-25), so the
+half days were missing here until 2026-09-01. This table comes from the
+district's approved *2026-2027 School Calendar* (`FY27 Calendar.pdf` in Class
+Development).
+
+Every all-student early release is a **Wednesday**, so it always lands on a
+cycle day and always shortens somebody's class. Plan a lab or an exam around
+one.
+
+| Date | Cycle | Note |
+|---|---|---|
+| 2026-09-16 (Wed) | R2 | |
+| 2026-10-07 (Wed) | R1 | |
+| 2026-11-25 (Wed) | none | School is open; no cycle block runs. See below. |
+| 2026-12-09 (Wed) | B2 | Also HS Conference |
+| 2026-12-23 (Wed) | B1 | |
+| 2027-01-13 (Wed) | B1 | |
+| 2027-02-03 (Wed) | B2 | |
+| 2027-03-03 (Wed) | R2 | |
+| 2027-04-14 (Wed) | R2 | |
+| 2027-05-12 (Wed) | B1 | |
+| 2027-06-11 (Fri) | — | Early release, last day of school (no snow days) |
+| 2027-06-21 (Mon) | — | Early release, last day of school (5 snow days) |
+
+**Early releases that do not affect the high school**, listed so nobody has to
+re-check the district calendar: 2026-11-04, 2026-11-18 and 2027-04-07 are Pre-K
+and elementary only, and 2027-05-07 is a kindergarten-only closure.
+
+**How long a shortened period runs is not recorded anywhere we have.** The
+district calendar names the day and not the bell schedule. Do not assume a
+normal 80-minute block on any date above.
+
+**2026-11-25 is open but carries no cycle day, on purpose.** The district
+calendar has it as an early release day for all students, so school is in
+session — it is not a closure like Thanksgiving the next day. Its cycle code is
+blank because **the cycle is deliberately held rather than advanced: spending a
+B1 on a half day would waste it.** 11/24 is R1, and the next B1 waits until
+12/01. Confirmed by Ray, 2026-09-01.
+
+The rotation is otherwise a strict R1 → B1 → R2 → B2, and holidays do not
+advance it either. Do not "fix" the blank at 11/25.
+
+**Every other early release above does carry a cycle day.** 2026-09-16 sits in
+sequence as R2 with no pause, and the rest follow the same way. Those days
+shorten a real class; 11/25 removes one.
+
 ## Non-cycle days (holidays, breaks, special days)
 
 | Date | Day |
@@ -110,7 +159,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2026-09-13 (Sun) |  |
 | 2026-09-14 (Mon) | R1 |
 | 2026-09-15 (Tue) | B1 |
-| 2026-09-16 (Wed) | R2 |
+| 2026-09-16 (Wed) | R2 (early release) |
 | 2026-09-17 (Thu) | B2 |
 | 2026-09-18 (Fri) | R1 |
 | 2026-09-19 (Sat) |  |
@@ -131,7 +180,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2026-10-04 (Sun) |  |
 | 2026-10-05 (Mon) | R2 |
 | 2026-10-06 (Tue) | B2 |
-| 2026-10-07 (Wed) | R1 |
+| 2026-10-07 (Wed) | R1 (early release) |
 | 2026-10-08 (Thu) | B1 |
 | 2026-10-09 (Fri) | R2 |
 | 2026-10-10 (Sat) |  |
@@ -194,7 +243,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2026-12-06 (Sun) |  |
 | 2026-12-07 (Mon) | B1 |
 | 2026-12-08 (Tue) | R2 |
-| 2026-12-09 (Wed) | B2 |
+| 2026-12-09 (Wed) | B2 (early release) |
 | 2026-12-10 (Thu) | R1 |
 | 2026-12-11 (Fri) | B1 |
 | 2026-12-12 (Sat) |  |
@@ -208,7 +257,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2026-12-20 (Sun) |  |
 | 2026-12-21 (Mon) | B2 |
 | 2026-12-22 (Tue) | R1 |
-| 2026-12-23 (Wed) | B1 |
+| 2026-12-23 (Wed) | B1 (early release) |
 | 2026-12-24 (Thu) | Winter Break |
 | 2026-12-25 (Fri) | Winter Break |
 | 2026-12-26 (Sat) |  |
@@ -229,7 +278,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2027-01-10 (Sun) |  |
 | 2027-01-11 (Mon) | B2 |
 | 2027-01-12 (Tue) | R1 |
-| 2027-01-13 (Wed) | B1 |
+| 2027-01-13 (Wed) | B1 (early release) |
 | 2027-01-14 (Thu) | R2 |
 | 2027-01-15 (Fri) | B2 |
 | 2027-01-16 (Sat) |  |
@@ -250,7 +299,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2027-01-31 (Sun) |  |
 | 2027-02-01 (Mon) | B1 |
 | 2027-02-02 (Tue) | R2 |
-| 2027-02-03 (Wed) | B2 |
+| 2027-02-03 (Wed) | B2 (early release) |
 | 2027-02-04 (Thu) | R1 |
 | 2027-02-05 (Fri) | B1 |
 | 2027-02-06 (Sat) |  |
@@ -278,7 +327,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2027-02-28 (Sun) |  |
 | 2027-03-01 (Mon) | R1 |
 | 2027-03-02 (Tue) | B1 |
-| 2027-03-03 (Wed) | R2 |
+| 2027-03-03 (Wed) | R2 (early release) |
 | 2027-03-04 (Thu) | B2 |
 | 2027-03-05 (Fri) | R1 |
 | 2027-03-06 (Sat) |  |
@@ -320,7 +369,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2027-04-11 (Sun) |  |
 | 2027-04-12 (Mon) | R1 |
 | 2027-04-13 (Tue) | B1 |
-| 2027-04-14 (Wed) | R2 |
+| 2027-04-14 (Wed) | R2 (early release) |
 | 2027-04-15 (Thu) | B2 |
 | 2027-04-16 (Fri) | R1 |
 | 2027-04-17 (Sat) |  |
@@ -348,7 +397,7 @@ Marked across every course column in the source file, so they belong here rather
 | 2027-05-09 (Sun) |  |
 | 2027-05-10 (Mon) | B2 |
 | 2027-05-11 (Tue) | R1 |
-| 2027-05-12 (Wed) | B1 |
+| 2027-05-12 (Wed) | B1 (early release) |
 | 2027-05-13 (Thu) | R2 |
 | 2027-05-14 (Fri) | B2 |
 | 2027-05-15 (Sat) |  |
