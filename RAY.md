@@ -38,5 +38,8 @@ DECISIONS.md.
   (`vault-shared`). No skill or script commits or pushes on his behalf,
   under any circumstances — prepare files and hand him the exact commands
   instead.
+- When handing Ray commands to copy, always include the push in the same
+  block. A commit he has to follow with a push he types himself is a
+  half-finished hand-off.
 
-<!-- V01 -->
+<!-- V02 -->
