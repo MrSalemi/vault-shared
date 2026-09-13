@@ -514,3 +514,9 @@ git push                          # the hook runs preflight and can refuse
 - `build-all.sh` adds `/Applications/LibreOffice.app/Contents/MacOS` to PATH as
   a macOS fallback, so a test cannot hide `soffice` from it by trimming PATH on
   a Mac that has LibreOffice installed.
+- node 22+ carries a `localStorage` global and warns per process that it has no
+  backing file; a dependency reads it to sniff for a browser. `build-all.sh`
+  exports `--disable-warning=ExperimentalWarning` for what it runs, and only
+  that. **Deprecations are not silenced** — DEP0190 was ours, from
+  `execFileSync(..., {shell: true})` in `topdf.js`, and it was fixed there.
+  Never shell out to find a program; search `process.env.PATH`.

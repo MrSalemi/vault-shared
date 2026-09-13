@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the printable guides from markdown, pad odd page counts, and report.
-# V09
+# V10
 #
 # See TOOLS.md for what this needs installed and what must pass before a push.
 #
@@ -216,6 +216,19 @@ if ! command -v soffice >/dev/null 2>&1 \
    && [ -x "/Applications/LibreOffice.app/Contents/MacOS/soffice" ]; then
     PATH="/Applications/LibreOffice.app/Contents/MacOS:$PATH"
 fi
+
+# node 22 and up carry a localStorage global and warn, on every process that
+# touches it, that it is not backed by a file. Nothing here asks for web
+# storage -- a dependency reads the global to see whether it is in a browser --
+# so the warning is noise, and it was printed twice per padded guide. It is
+# version-dependent, which is worse than useless: the same build was quiet on
+# one Mac and shouting on the other.
+#
+# Only ExperimentalWarning is silenced, and only for what this script runs.
+# Deprecations still print, because those are ours to fix -- DEP0190 was, and
+# it was fixed in topdf.js rather than hidden here. Anything already in
+# NODE_OPTIONS is kept.
+export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--disable-warning=ExperimentalWarning"
 
 # The check is made when a guide actually needs converting, not up front.
 # A run where every guide is already current converts nothing, so demanding

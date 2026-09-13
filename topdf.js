@@ -17,17 +17,31 @@ const {execFileSync} = require('child_process');
 
 // The macOS installer does not put soffice on PATH. build-all.sh adds it for
 // anything it runs, but a script run by hand needs the same courtesy.
+//
+// The PATH lookup is done here rather than by shelling out to `command -v`.
+// That call passed arguments through a shell, which node warns about (DEP0190)
+// and which is a quoting hazard for no gain -- searching PATH is four lines.
+// Search process.env.PATH, never a hardcoded list of directories: one did
+// exactly that and stopped finding node the day it moved to Homebrew.
+function onPath(name) {
+  return (process.env.PATH || "").split(path.delimiter).filter(Boolean)
+    .some(dir => {
+      try {
+        fs.accessSync(path.join(dir, name), fs.constants.X_OK);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
+}
+
 function soffice() {
   const mac = "/Applications/LibreOffice.app/Contents/MacOS/soffice";
-  try {
-    execFileSync("command", ["-v", "soffice"], {stdio: "ignore", shell: true});
-    return "soffice";
-  } catch (e) {
-    if (fs.existsSync(mac)) return mac;
-    console.error("LibreOffice (soffice) is not on PATH, and a PDF needs it.");
-    console.error("  brew install --cask libreoffice");
-    process.exit(1);
-  }
+  if (onPath("soffice")) return "soffice";
+  if (fs.existsSync(mac)) return mac;
+  console.error("LibreOffice (soffice) is not on PATH, and a PDF needs it.");
+  console.error("  brew install --cask libreoffice");
+  process.exit(1);
 }
 
 async function writePdf(doc, outPdf, Packer) {
