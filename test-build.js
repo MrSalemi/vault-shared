@@ -423,20 +423,23 @@ async function main() {
     check('every part but the clock is identical', differ.length === 0, differ.join(', '));
   }
 
-  // --- build-all.sh only needs Class Development on a -d run -------------
+  // --- build-all.sh only needs the deploy folder on a -d run --------------
   // It used to resolve deploy.txt before it had even read the arguments, so a
-  // machine without Class Development mounted could not build a guide at all.
+  // machine with no Drive mounted could not build a guide at all.
   // Nothing here converts anything: the PDF is written first and is newer than
   // its sources, so the run reports "up to date" and never reaches LibreOffice.
-  console.log('\nbuild-all.sh builds without Class Development mounted');
+  console.log('\nbuild-all.sh builds without the deploy folder');
   const wNoDeploy = scratchUnit();
   fs.writeFileSync(path.join(wNoDeploy, 'z01.md'), guide('Some words.', 'Z.docx'));
-  fs.writeFileSync(path.join(wNoDeploy, 'deploy.txt'), 'No Such Folder Anywhere\n');
+  fs.writeFileSync(path.join(wNoDeploy, 'deploy.txt'), 'Some Shared Folder\n');
   fs.writeFileSync(path.join(wNoDeploy, 'Z.pdf'), 'not really a pdf');
+  // CLASS_DEV_DIR is cleared for every run here. A plain run must not care
+  // that it is missing; a -d run is what complains, and that is checked below.
   const runAll = args => {
     try {
       const out = execFileSync(path.join(__dirname, 'build-all.sh'), args,
-                               {cwd: wNoDeploy, stdio: 'pipe'});
+                               {cwd: wNoDeploy, stdio: 'pipe',
+                                env: {...process.env, GUIDES: '', CLASS_DEV_DIR: ''}});
       return {ok: true, out: out.toString()};
     } catch (e) {
       return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
@@ -444,8 +447,8 @@ async function main() {
   };
   const noDeploy = runAll(['z01.md']);
   check('a plain run succeeds', noDeploy.ok, noDeploy.out.trim());
-  check('it did not go looking for Class Development',
-        !/Class Development/.test(noDeploy.out), noDeploy.out.trim());
+  check('it did not ask where the deploy folder is',
+        !/CLASS_DEV_DIR/.test(noDeploy.out), noDeploy.out.trim());
   // The same run must not demand LibreOffice either. It converts nothing --
   // every guide is current -- and this repo's CI runner has node and no
   // LibreOffice, so an up-front tool check turns a green build red. Asserting
@@ -645,60 +648,75 @@ async function main() {
     }
   }
 
-  // --- where the Drive folder is, is recorded, not searched for -----------
+  // --- the deploy folder comes from CLASS_DEV_DIR -------------------------
   // build-all.sh used to find(1) the whole of ~/Library/CloudStorage on every
   // -d run. Drive File Stream serves one folder listing at a time, so a run
   // that matched nothing had to visit everything and never came back -- the
-  // suite hung right here on 2026-09-13. The search is gone. The path is
-  // recorded on the machine the first time and read back after that.
+  // suite hung right here on 2026-09-13. There is no search now. The path is
+  // exported from ~/.zshrc, once per machine, and the build only checks it.
   //
   // Nothing here converts: Z.pdf is written fresh, so the guide is current and
   // the run never reaches LibreOffice. These run on the CI runner.
-  console.log('\nthe deploy folder is recorded on the machine, not searched for');
+  console.log('\nthe deploy folder comes from CLASS_DEV_DIR');
   fs.writeFileSync(stalePdf, 'not really a pdf');
-  const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-cache-'));
-  let drive = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-drive-'));
+  const classDev = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-classdev-'));
   // HOME points at an empty folder for every run below. If any of them still
-  // searched, there is nothing under it to find and they would fail -- which
-  // is the point: passing proves no search happened.
+  // searched, there is nothing under it to find -- passing proves no search.
   const noHome = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-home-'));
-  const runDeploy = (env = {}) => {
+  const runDeploy = env => {
     try {
       const out = execFileSync(path.join(__dirname, 'build-all.sh'), ['-d', 'z01.md'],
                                {cwd: wNoDeploy, stdio: 'pipe',
                                 env: {...process.env, HOME: noHome,
-                                      XDG_CACHE_HOME: cache, GUIDES: '', ...env}});
+                                      GUIDES: '', CLASS_DEV_DIR: '', ...env}});
       return {ok: true, out: out.toString()};
     } catch (e) {
       return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
     }
   };
 
-  const record = runDeploy({DRIVE: drive});
-  check('DRIVE records the folder and the run succeeds', record.ok, record.out.trim());
+  const good = runDeploy({CLASS_DEV_DIR: classDev});
+  check('a -d run succeeds with CLASS_DEV_DIR set', good.ok, good.out.trim());
   check('and it deployed into it',
-        fs.existsSync(path.join(drive, 'Z.pdf')), fs.readdirSync(drive).join(', '));
+        fs.existsSync(path.join(classDev, 'Z.pdf')), fs.readdirSync(classDev).join(', '));
 
-  fs.unlinkSync(path.join(drive, 'Z.pdf'));
-  const remembered = runDeploy();
-  check('a later run needs no DRIVE and no search', remembered.ok, remembered.out.trim());
-  check('and it found the same folder',
-        fs.existsSync(path.join(drive, 'Z.pdf')), remembered.out.trim());
+  // The message is the whole feature when the variable is missing: this is the
+  // only thing standing between a new machine and a confusing failure.
+  const unset = runDeploy();
+  check('an unset CLASS_DEV_DIR fails the run', !unset.ok, unset.out.trim());
+  check('and the message names the variable',
+        /CLASS_DEV_DIR/.test(unset.out), unset.out.trim());
+  check('and it gives the export line to add',
+        /export CLASS_DEV_DIR=/.test(unset.out), unset.out.trim());
+  check('and it does not go searching for the folder',
+        !/looking for|find/.test(unset.out), unset.out.trim());
 
-  // The one failure that is still real: the recorded folder is gone, usually
-  // because Drive is not mounted. It has to fail at once and say where it
-  // looked -- not search for it again, which is the behaviour that hung.
-  fs.rmSync(drive, {recursive: true, force: true});
-  const gone = runDeploy();
-  check('a recorded folder that is gone fails the run', !gone.ok, gone.out.trim());
-  check('and the message names the path it recorded',
-        gone.out.includes(drive), gone.out.trim());
-  check('and it did not go searching for it again',
-        !/looking for/.test(gone.out), gone.out.trim());
+  // Set but gone is a different fault and gets a different message: the path
+  // is right and Drive is not mounted.
+  const gone = runDeploy({CLASS_DEV_DIR: path.join(os.tmpdir(), 'guide-no-such-classdev')});
+  check('a CLASS_DEV_DIR that is not there fails the run', !gone.ok, gone.out.trim());
+  check('and the message names the path it was given',
+        gone.out.includes('guide-no-such-classdev'), gone.out.trim());
 
-  // A path handed in that is not a folder is caught before anything is recorded.
-  const badDrive = runDeploy({DRIVE: path.join(os.tmpdir(), 'guide-no-such-drive')});
-  check('DRIVE pointing at nothing fails the run', !badDrive.ok, badDrive.out.trim());
+  // deploy.txt asks for a course folder inside it. Present variable, missing
+  // course folder, is a third fault and must not read as either of the above.
+  const wRest = scratchUnit();
+  fs.writeFileSync(path.join(wRest, 'z01.md'), guide('Some words.', 'Z.docx'));
+  fs.writeFileSync(path.join(wRest, 'deploy.txt'), 'Some Shared Folder/Course/Guides\n');
+  fs.writeFileSync(path.join(wRest, 'Z.pdf'), 'not really a pdf');
+  let noRest;
+  try {
+    noRest = {ok: true,
+              out: execFileSync(path.join(__dirname, 'build-all.sh'), ['-d', 'z01.md'],
+                                {cwd: wRest, stdio: 'pipe',
+                                 env: {...process.env, HOME: noHome, GUIDES: '',
+                                       CLASS_DEV_DIR: classDev}}).toString()};
+  } catch (e) {
+    noRest = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a missing course folder inside it fails the run', !noRest.ok, noRest.out.trim());
+  check('and the message names the course folder deploy.txt asked for',
+        /Course\/Guides/.test(noRest.out), noRest.out.trim());
 
   if (skipped) {
     console.log(`\n${skipped} check(s) skipped — no LibreOffice on this machine.`);

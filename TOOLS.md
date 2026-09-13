@@ -363,6 +363,7 @@ for t in node npm git soffice pdftoppm; do
 done
 printf "%-10s %s\n" carlito "$(fc-list | grep -ic carlito) faces (want 4)"
 [ -d ~/vaults/shared/node_modules ] && echo "node_modules ok" || echo "node_modules MISSING"
+[ -d "$CLASS_DEV_DIR" ] && echo "CLASS_DEV_DIR ok" || echo "CLASS_DEV_DIR MISSING (see §4)"
 ```
 
 **The school network blocks npm and GitHub.** Anything needing a download has to
@@ -379,43 +380,34 @@ shared Drive folder:
 Class Development/Robotics/Project Guides
 ```
 
-The builder needs the first component's real path on this machine — that is
-what makes one line work on a machine that **owns** the Drive folder
+The builder gets the first component's real path from **`CLASS_DEV_DIR`**,
+exported from `~/.zshrc`. It is per machine: the account name, the user name and
+the shape of the path all differ between a Mac that **owns** the Drive folder
 (`.../My Drive/Teaching/Class Development`) and one that reaches the same folder
-**through a shortcut** (`.../.shortcut-targets-by-id/<id>/Class Development`),
-where the account name, the user name and the shape of the path all differ.
-
-**That path is recorded on the machine, not searched for.** It lives in
-`${XDG_CACHE_HOME:-~/.cache}/vault-shared/drive-<slug>`, outside every repo,
-because it is a fact about the machine and not about any clone.
-
-Tell a new Mac where the folder is, once:
+**through a shortcut** (`.../.shortcut-targets-by-id/<id>/Class Development`).
 
 ```bash
-cd ~/vaults/nhsrobotics/guides
-DRIVE="$HOME/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Teaching/Class Development" \
-    ../shared/build-all.sh -d
+export CLASS_DEV_DIR="$HOME/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Teaching/Class Development"
 ```
 
-Every `-d` run after that needs no `DRIVE` and does no searching. If nothing is
-recorded yet and `DRIVE` is not given, the builder searches once, says so, and
-records what it finds.
+One line per machine, and it serves all five vaults.
 
-- Looked up **only on a `-d` run**, so a machine with no Drive mounted can still
+- Checked **only on a `-d` run**, so a machine with no Drive mounted can still
   build.
-- A recorded folder that is no longer there is an **error naming the recorded
-  path**, not a fresh search. Usually it means Drive is not mounted.
-- `GUIDES=/path/to/it` still overrides everything, for one run.
+- Three faults, three messages: **not set** prints the export line to add;
+  **set but not there** names the path and asks whether Drive is mounted;
+  **set and there but missing the course folder** names the course folder
+  `deploy.txt` asked for.
+- `GUIDES=/path/to/it` still overrides it, for one run.
 - A guide can land in a subfolder of the target with `folder: 1.2` in its
   frontmatter.
 
-**Why it is recorded rather than found.** Until 2026-09-13 every `-d` run ran a
-`find` over the whole of `~/Library/CloudStorage`. Drive File Stream serves one
-folder listing at a time, so the walk was slow whenever it worked — and when
-nothing matched it had to visit everything before it could say so, with no early
-exit, which is a hang. The suite's own "the folder is missing" check triggered
-exactly that and stopped the test run dead. The search is gone and so is that
-check; what replaced it is above.
+**There is no searching for it, and there must not be.** Until 2026-09-13 every
+`-d` run ran a `find` over the whole of `~/Library/CloudStorage`. Drive File
+Stream serves one folder listing at a time, so the walk was slow whenever it
+worked — and when nothing matched it had to visit every folder before it could
+say so, with no early exit, which is a hang. The suite's own "the folder is
+missing" check triggered exactly that and stopped the test run dead.
 
 Deploy is a plain `cp` over the Drive mount, deliberately. Drive for Desktop
 sees the file change and uploads a **new revision of the same file**, so the
@@ -507,7 +499,8 @@ git push                          # the hook runs preflight and can refuse
   move that check back above the argument parsing.
 - Proving a folder is **absent** on a Drive mount means visiting every folder,
   and there is no early exit. Any code that searches Drive to report "not found"
-  is a hang waiting for the day the folder is missing. Record the path instead.
+  is a hang waiting for the day the folder is missing. Take the path from
+  `CLASS_DEV_DIR` and never search.
 - A file `build.js` requires but `BUILDER_FILES` does not list means your edit
   does nothing and the build says "up to date".
 - `node_modules/`, `*.docx` and `*.pdf` are gitignored here, and built PDFs are
