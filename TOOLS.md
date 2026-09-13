@@ -249,6 +249,13 @@ if (!HAS_SOFFICE) {
 }
 ```
 
+**Skip only when the check genuinely needs a real PDF.** `build-all.sh` demands
+the tools before it runs an extra's recipe, so a check about something else
+entirely — that `NODE_OPTIONS` reaches what it spawns — would otherwise skip on
+the runner for a reason unrelated to what it tests, and the runner is where that
+check matters most. Put stub `soffice` and `pdftoppm` on `PATH` for that one run
+instead: nothing is converted, so they are never called.
+
 Assert the *decision*, not the digit. A check that read
 `/w:line="360"/` had to be rewritten the first time the spacing changed, even
 though nothing it was protecting had broken. `lineVal >= 276` guards the same

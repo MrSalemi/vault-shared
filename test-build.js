@@ -724,40 +724,62 @@ async function main() {
   // so every guide printed two of them on one of Ray's Macs and none on the
   // other. build-all.sh silences ExperimentalWarning for what it runs, and
   // nothing else -- a deprecation is ours to fix, not to hide.
+  //
+  // Read from the source. Whether node actually emits the warning depends on
+  // its version, so a check that built a guide and looked for a clean run
+  // would pass on a runner that was never going to print one.
   console.log('\nbuild-all.sh silences node experimental warnings, not deprecations');
-  // A bare scratch folder, not scratchUnit(): this run globs every guide in the
-  // folder, and scratchUnit's empty sibling files have no frontmatter.
+  const buildSrc = fs.readFileSync(path.join(__dirname, 'build-all.sh'), 'utf8');
+  check('it exports --disable-warning=ExperimentalWarning',
+        /export NODE_OPTIONS=.*--disable-warning=ExperimentalWarning/.test(buildSrc));
+  check('and it keeps a NODE_OPTIONS that is already set',
+        /export NODE_OPTIONS="\$\{NODE_OPTIONS:\+/.test(buildSrc));
+  check('and it silences nothing else',
+        !/--no-warnings|--no-deprecation|--disable-warning=DEP/.test(buildSrc));
+
+  // And that it actually reaches what build-all.sh spawns, which the source
+  // check above cannot know. The only two things it spawns are make.js, which
+  // runs only for a stale guide and then needs a real LibreOffice, and an
+  // extra's recipe. So the fixture uses an extra whose recipe reports the
+  // environment it was handed.
+  //
+  // build-all.sh checks for the tools before running a recipe, on purpose -- a
+  // recipe usually reaches topdf.js and therefore LibreOffice. Nothing is
+  // converted here: the guide is current and the recipe only writes a text
+  // file. So stub soffice and pdftoppm satisfy that check and are never
+  // called. Without them this would have to skip on the CI runner, for a
+  // reason that has nothing to do with what it tests.
   const wOpts = scratch();
   fs.writeFileSync(path.join(wOpts, 'course.js'), "module.exports = () => ({});\n");
   fs.writeFileSync(path.join(wOpts, 'e04.md'), guide('Some words.', 'E4.docx'));
   fs.writeFileSync(path.join(wOpts, 'E4.pdf'), 'not really a pdf');
-  // An extra whose command records the environment it was handed. Extras run
-  // on a full run only, which is why nothing is named on the command line.
   fs.writeFileSync(path.join(wOpts, 'extras.txt'),
     'opts.txt :: node -e "require(\'fs\').writeFileSync(\'opts.txt\', process.env.NODE_OPTIONS || \'\')"\n');
+  const stubBin = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-stub-'));
+  for (const t of ['soffice', 'pdftoppm']) {
+    const f = path.join(stubBin, t);
+    fs.writeFileSync(f, '#!/bin/sh\nexit 0\n');
+    fs.chmodSync(f, 0o755);
+  }
   let optsRun;
   try {
     optsRun = {ok: true,
                out: execFileSync(path.join(__dirname, 'build-all.sh'), [],
                                  {cwd: wOpts, stdio: 'pipe',
-                                  env: {...process.env, NODE_OPTIONS: '--max-old-space-size=512'}}).toString()};
+                                  env: {...process.env,
+                                        PATH: stubBin + path.delimiter + process.env.PATH,
+                                        NODE_OPTIONS: '--max-old-space-size=512'}}).toString()};
   } catch (e) {
     optsRun = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
   }
   check('a full run with an extra succeeds', optsRun.ok, optsRun.out.trim());
   const handed = fs.existsSync(path.join(wOpts, 'opts.txt'))
     ? fs.readFileSync(path.join(wOpts, 'opts.txt'), 'utf8') : '';
-  check('what it runs gets --disable-warning=ExperimentalWarning',
+  check('the flag reaches what it spawns',
         /--disable-warning=ExperimentalWarning/.test(handed), handed);
-  check('and it did not silence deprecations',
-        !/--disable-warning=DEP|--no-deprecation/.test(handed), handed);
-  check('and NODE_OPTIONS already set is kept',
+  check('and a NODE_OPTIONS already set reaches it too',
         /--max-old-space-size=512/.test(handed), handed);
 
-  // topdf.js used to ask the shell where soffice was, with
-  // execFileSync("command", ["-v", ...], {shell: true}). node warns about that
-  // (DEP0190) and the quoting is a hazard for no gain. It searches PATH itself
-  // now. Course-side scripts require this file, so the warning reached them.
   console.log('\ntopdf.js finds soffice without a shell');
   const topdfSrc = fs.readFileSync(path.join(__dirname, 'topdf.js'), 'utf8');
   check('it spawns nothing with shell: true',
