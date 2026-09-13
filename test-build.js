@@ -645,12 +645,60 @@ async function main() {
     }
   }
 
-  // The other half of the same rule: -d still refuses, and still says why.
+  // --- where the Drive folder is, is recorded, not searched for -----------
+  // build-all.sh used to find(1) the whole of ~/Library/CloudStorage on every
+  // -d run. Drive File Stream serves one folder listing at a time, so a run
+  // that matched nothing had to visit everything and never came back -- the
+  // suite hung right here on 2026-09-13. The search is gone. The path is
+  // recorded on the machine the first time and read back after that.
+  //
+  // Nothing here converts: Z.pdf is written fresh, so the guide is current and
+  // the run never reaches LibreOffice. These run on the CI runner.
+  console.log('\nthe deploy folder is recorded on the machine, not searched for');
   fs.writeFileSync(stalePdf, 'not really a pdf');
-  const withDeploy = runAll(['-d', 'z01.md']);
-  check('a -d run still fails when the folder is missing', !withDeploy.ok);
-  check('and the message names the folder deploy.txt asked for',
-        /No Such Folder Anywhere/.test(withDeploy.out), withDeploy.out.trim());
+  const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-cache-'));
+  let drive = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-drive-'));
+  // HOME points at an empty folder for every run below. If any of them still
+  // searched, there is nothing under it to find and they would fail -- which
+  // is the point: passing proves no search happened.
+  const noHome = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-home-'));
+  const runDeploy = (env = {}) => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), ['-d', 'z01.md'],
+                               {cwd: wNoDeploy, stdio: 'pipe',
+                                env: {...process.env, HOME: noHome,
+                                      XDG_CACHE_HOME: cache, GUIDES: '', ...env}});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+
+  const record = runDeploy({DRIVE: drive});
+  check('DRIVE records the folder and the run succeeds', record.ok, record.out.trim());
+  check('and it deployed into it',
+        fs.existsSync(path.join(drive, 'Z.pdf')), fs.readdirSync(drive).join(', '));
+
+  fs.unlinkSync(path.join(drive, 'Z.pdf'));
+  const remembered = runDeploy();
+  check('a later run needs no DRIVE and no search', remembered.ok, remembered.out.trim());
+  check('and it found the same folder',
+        fs.existsSync(path.join(drive, 'Z.pdf')), remembered.out.trim());
+
+  // The one failure that is still real: the recorded folder is gone, usually
+  // because Drive is not mounted. It has to fail at once and say where it
+  // looked -- not search for it again, which is the behaviour that hung.
+  fs.rmSync(drive, {recursive: true, force: true});
+  const gone = runDeploy();
+  check('a recorded folder that is gone fails the run', !gone.ok, gone.out.trim());
+  check('and the message names the path it recorded',
+        gone.out.includes(drive), gone.out.trim());
+  check('and it did not go searching for it again',
+        !/looking for/.test(gone.out), gone.out.trim());
+
+  // A path handed in that is not a folder is caught before anything is recorded.
+  const badDrive = runDeploy({DRIVE: path.join(os.tmpdir(), 'guide-no-such-drive')});
+  check('DRIVE pointing at nothing fails the run', !badDrive.ok, badDrive.out.trim());
 
   if (skipped) {
     console.log(`\n${skipped} check(s) skipped — no LibreOffice on this machine.`);

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build the printable guides from markdown, pad odd page counts, and report.
-# V08
+# V09
 #
 # See TOOLS.md for what this needs installed and what must pass before a push.
 #
@@ -142,43 +142,92 @@ done
 # Only looked up on a -d run. Building a guide does not need Class Development
 # mounted, and this used to refuse to build at all on a machine without it --
 # a sandbox, or a thread that mounted only the repo.
+#
+# WHERE the top folder is, is a fact about this machine. So it is recorded on
+# the machine and read back, not rediscovered on every run.
+#
+# It used to be found with a find over the whole of ~/Library/CloudStorage on
+# every -d run. Drive File Stream serves one folder listing at a time, so that
+# walk was slow whenever it worked and hung outright when nothing matched:
+# proving a folder is absent means visiting everything, and there is no early
+# exit. That is what stalled the suite on 2026-09-13.
 if [ "$DEPLOY" = true ] && [ -z "$GUIDES" ] && [ -f deploy.txt ]; then
     rel=$(grep -v '^[[:space:]]*#' deploy.txt | grep -v '^[[:space:]]*$' | head -1)
     top=${rel%%/*}                      # the shared folder: "Class Development"
     rest=${rel#*/}                      # the course part: "Robotics/Project Guides"
     [ "$rest" = "$rel" ] && rest=""     # deploy.txt named the top folder only
 
-    # A folder can surface more than once -- two shortcuts to one Drive folder
-    # are two paths to the same place. Resolve each hit to its physical path and
-    # collapse duplicates, so that is not reported as an ambiguity.
-    matches=$(
-        find "$HOME/Library/CloudStorage" /sessions/*/mnt \
-             -maxdepth 4 -type d -name "$top" 2>/dev/null |
-        while IFS= read -r hit; do
-            target="$hit${rest:+/$rest}"
-            [ -d "$target" ] || continue
-            (cd "$target" && pwd -P)
-        done | sort -u
-    )
-    count=$(printf '%s' "$matches" | grep -c . || true)
+    # One note file per top folder, outside the repo: this is per machine and
+    # per user, not per clone, and nothing about it belongs in git.
+    store="${XDG_CACHE_HOME:-$HOME/.cache}/vault-shared"
+    slug=$(printf '%s' "$top" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-')
+    note="$store/drive-$slug"
 
-    if [ "$count" -eq 0 ]; then
-        echo "ERROR: deploy.txt names '$rel'." >&2
-        if [ -n "$rest" ]; then
-            echo "       No '$top' holding '$rest' was found under any Google Drive mount." >&2
-        else
-            echo "       No '$top' was found under any Google Drive mount." >&2
+    # Telling the machine directly, which is the fast path and the one to use
+    # on a new Mac:
+    #
+    #   DRIVE="$HOME/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Teaching/Class Development" \
+    #       ../shared/build-all.sh -d
+    #
+    # It is recorded, and every run after this needs no DRIVE and no search.
+    if [ -n "$DRIVE" ]; then
+        if [ ! -d "$DRIVE" ]; then
+            echo "ERROR: DRIVE is set to '$DRIVE', which is not a folder." >&2
+            exit 1
         fi
-        echo "       Set GUIDES=/path/to/it to override." >&2
-        exit 1
-    elif [ "$count" -gt 1 ]; then
-        echo "ERROR: '$rel' matched more than one folder:" >&2
-        # Not printf '%s\n' $matches -- these paths have spaces in them.
-        printf '%s\n' "$matches" | sed 's/^/       /' >&2
-        echo "       Set GUIDES=/path/to/the/right/one." >&2
+        mkdir -p "$store"
+        (cd "$DRIVE" && pwd -P) > "$note"
+    fi
+
+    if [ -s "$note" ]; then
+        drive=$(cat "$note")
+        if [ ! -d "$drive" ]; then
+            echo "ERROR: '$top' was recorded at:" >&2
+            echo "       $drive" >&2
+            echo "       That folder is not there now. Is Google Drive mounted?" >&2
+            echo "       If it moved, record the new path once:" >&2
+            echo "       DRIVE=\"/new/path/to/$top\" $0 -d" >&2
+            exit 1
+        fi
+    else
+        # Nothing recorded yet: search once, then never again on this machine.
+        # -prune so a match is not descended into, and the search is rooted at
+        # the Drive mounts rather than all of CloudStorage.
+        echo "note: looking for '$top' once to record where it is. This is slow." >&2
+        matches=$(
+            find "$HOME/Library/CloudStorage"/* /sessions/*/mnt \
+                 -maxdepth 3 -type d -name "$top" -prune 2>/dev/null |
+            while IFS= read -r hit; do
+                (cd "$hit" && pwd -P)
+            done | sort -u
+        )
+        count=$(printf '%s' "$matches" | grep -c . || true)
+
+        if [ "$count" -eq 0 ]; then
+            echo "ERROR: deploy.txt names '$rel', and no '$top' was found." >&2
+            echo "       Record where it is once:" >&2
+            echo "       DRIVE=\"/path/to/$top\" $0 -d" >&2
+            exit 1
+        elif [ "$count" -gt 1 ]; then
+            echo "ERROR: '$top' matched more than one folder:" >&2
+            # Not printf '%s\n' $matches -- these paths have spaces in them.
+            printf '%s\n' "$matches" | sed 's/^/       /' >&2
+            echo "       Record the right one once:" >&2
+            echo "       DRIVE=\"/the/right/one\" $0 -d" >&2
+            exit 1
+        fi
+        drive="$matches"
+        mkdir -p "$store"
+        printf '%s\n' "$drive" > "$note"
+        echo "note: recorded '$top' at $drive" >&2
+    fi
+
+    GUIDES="$drive${rest:+/$rest}"
+    if [ ! -d "$GUIDES" ]; then
+        echo "ERROR: deploy.txt names '$rel'." >&2
+        echo "       '$top' is at $drive, but it holds no '$rest'." >&2
         exit 1
     fi
-    GUIDES="$matches"
 fi
 # Was a guide named on the command line? If not this is a full run, and a full
 # run is the only one that touches extras.txt.

@@ -6,7 +6,7 @@ grammar, `course.js`, the rules that bite. This file is the *operator* manual:
 the tools, their dependencies, how to be on the current version, and the gate
 that has to pass before a push.
 
-*V01 — 2026-08-30*
+*V02 — 2026-09-13*
 
 ---
 
@@ -379,21 +379,43 @@ shared Drive folder:
 Class Development/Robotics/Project Guides
 ```
 
-The builder takes the first component, searches `~/Library/CloudStorage` and
-`/sessions/*/mnt` for a folder of that name containing the rest, and appends it.
-That is what makes one line work on a machine that **owns** the Drive folder
+The builder needs the first component's real path on this machine — that is
+what makes one line work on a machine that **owns** the Drive folder
 (`.../My Drive/Teaching/Class Development`) and one that reaches the same folder
-**through a shortcut**
-(`.../.shortcut-targets-by-id/<id>/Class Development`), where the account name,
-the user name and the shape of the path all differ.
+**through a shortcut** (`.../.shortcut-targets-by-id/<id>/Class Development`),
+where the account name, the user name and the shape of the path all differ.
+
+**That path is recorded on the machine, not searched for.** It lives in
+`${XDG_CACHE_HOME:-~/.cache}/vault-shared/drive-<slug>`, outside every repo,
+because it is a fact about the machine and not about any clone.
+
+Tell a new Mac where the folder is, once:
+
+```bash
+cd ~/vaults/nhsrobotics/guides
+DRIVE="$HOME/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Teaching/Class Development" \
+    ../shared/build-all.sh -d
+```
+
+Every `-d` run after that needs no `DRIVE` and does no searching. If nothing is
+recorded yet and `DRIVE` is not given, the builder searches once, says so, and
+records what it finds.
 
 - Looked up **only on a `-d` run**, so a machine with no Drive mounted can still
   build.
-- Multiple matches are an error that lists them. Two Drive accounts signed in on
-  one machine will both mount the same shared folder and produce exactly this.
-  `GUIDES=/path/to/it` overrides everything.
+- A recorded folder that is no longer there is an **error naming the recorded
+  path**, not a fresh search. Usually it means Drive is not mounted.
+- `GUIDES=/path/to/it` still overrides everything, for one run.
 - A guide can land in a subfolder of the target with `folder: 1.2` in its
   frontmatter.
+
+**Why it is recorded rather than found.** Until 2026-09-13 every `-d` run ran a
+`find` over the whole of `~/Library/CloudStorage`. Drive File Stream serves one
+folder listing at a time, so the walk was slow whenever it worked — and when
+nothing matched it had to visit everything before it could say so, with no early
+exit, which is a hang. The suite's own "the folder is missing" check triggered
+exactly that and stopped the test run dead. The search is gone and so is that
+check; what replaced it is above.
 
 Deploy is a plain `cp` over the Drive mount, deliberately. Drive for Desktop
 sees the file change and uploads a **new revision of the same file**, so the
@@ -483,6 +505,9 @@ git push                          # the hook runs preflight and can refuse
   requires grepping the vaults; `worksheet.js` was broken for two weeks this way.
 - `build-all.sh` resolves the deploy target only on `-d`, on purpose. Do not
   move that check back above the argument parsing.
+- Proving a folder is **absent** on a Drive mount means visiting every folder,
+  and there is no early exit. Any code that searches Drive to report "not found"
+  is a hang waiting for the day the folder is missing. Record the path instead.
 - A file `build.js` requires but `BUILDER_FILES` does not list means your edit
   does nothing and the build says "up to date".
 - `node_modules/`, `*.docx` and `*.pdf` are gitignored here, and built PDFs are
