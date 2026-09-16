@@ -91,6 +91,18 @@ write.
   the reference example: synthetic fixtures, no real course content,
   fast (no LibreOffice/network), and runs on every push.
 
+## Editing across vaults
+
+- Any thread may fix a **fact** in any vault it can reach — a wrong date, a
+  stale status sentence, a dead link. Fix the file. Do not write Ray a task
+  to fix a file you could have fixed yourself.
+- **Content and structure work** — building lessons, rewriting sections,
+  adding files — stays in that vault's own thread, which has read its
+  `STATUS.md` and `DECISIONS.md` first.
+- A thread editing a vault that is not its own leaves the change
+  uncommitted and hands Ray the commit and push commands. Ray can see every
+  open thread; a thread cannot.
+
 ## Version control
 
 - Ray controls all commits and pushes, in every repo, including this one
@@ -109,4 +121,4 @@ merged in here 2026-09-16. That file and this one both described how to write
 to Ray, and they were drifting. This file is the one Ray maintains, so it wins
 and the other is gone.
 
-<!-- V03 -->
+<!-- V04 -->
