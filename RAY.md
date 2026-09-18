@@ -41,6 +41,32 @@ it was written or how important it was.
 - Target roughly an 8th-grade writing level — plain words, short
   sentences, no unnecessary jargon.
 
+## Commands go in a code block
+
+Never put a command inside a sentence. Anything Ray is meant to run goes in a
+fenced block he can copy whole, with no prose wrapped around it. Several
+commands that belong together go in one block, in order.
+
+Explain before or after the block if an explanation is needed. Not inside it.
+
+## Destructive commands
+
+A command in a code block is a command Ray will run. A warning wrapped around
+it does not change that. So the bar for putting one in a block is higher than
+the bar for mentioning it.
+
+Never hand Ray a command that clears permissions, caches, credentials or
+history in bulk. `tccutil reset AppleEvents` with no bundle identifier wipes
+every Automation grant on the machine; it has been handed over once already
+and it did exactly that.
+
+If a targeted form exists, give only the targeted form. If none exists — a
+bare binary has no bundle identifier to target — say the thing cannot be
+safely removed and stop. Do not name the blunt command with a caveat attached.
+
+The same holds for `rm -rf`, `git reset --hard`, `git clean`, dropping a
+database, and anything that resets an app to defaults.
+
 ## Words to avoid
 
 - Never use "honest"/"honestly" as a filler word (e.g. "honest answer",
@@ -121,4 +147,4 @@ merged in here 2026-09-16. That file and this one both described how to write
 to Ray, and they were drifting. This file is the one Ray maintains, so it wins
 and the other is gone.
 
-<!-- V04 -->
+<!-- V06 -->

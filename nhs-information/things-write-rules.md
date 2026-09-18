@@ -2,6 +2,78 @@
 
 A standing fact. Present tense. If it becomes wrong, edit this file.
 
+## When the MCP fails, read the log before guessing
+
+The `things` MCP server can fail in ways that look alike from here. Claude sees
+only `get_device_info`, which reports `failed` and the server's own last words.
+That is not a diagnosis. The logs are:
+
+```
+~/Library/Logs/Claude/mcp-server-things.log     what Claude Desktop saw
+~/.things-mcp/logs/                             what the server itself wrote
+```
+
+### The AppleScript permission hang
+
+This is what happened on 2026-09-17, and it is the one to check first.
+
+**A timeout can mean a dialog is waiting on the screen right now.**
+
+The server drives Things through **AppleScript**, so macOS Automation
+permission governs it. When the grant is missing, macOS puts up a prompt. The
+server blocks until someone clicks it, and the handshake times out at about
+sixty seconds. Answer it slowly and you get the timeout even though nothing is
+broken.
+
+In the Claude log it looks like this:
+
+```
+[things] Server started and connected successfully
+[things] Message from client: method="initialize" id=0
+[things] error Couldn't start ... Error: Request timed out
+```
+
+About sixty seconds between the second line and the third, with the process
+alive the whole time. A crash looks nothing like this — it exits, with a
+traceback.
+
+**The grant is on the Python interpreter, not on Claude.** System Settings,
+Privacy & Security, Automation lists `python3.13` (or whichever version runs
+the server), with `Things.app` and `System Events.app` under it. Claude does
+not appear. So:
+
+- Reinstalling the server against a different Python starts over with no
+  grant, and reproduces this exact hang.
+- Running the server by hand in Terminal can go through a different
+  interpreter than Claude Desktop uses. That is a misleading test.
+
+Which interpreter: `head -1 ~/.local/bin/Things3-MCP-server`.
+
+**After the permission is settled, quit and reopen Claude Desktop.** The app
+does not re-spawn a failed server on its own, so until it restarts the session
+still sees `failed`.
+
+### The server never starts
+
+A traceback in the log, or an exit. The usual cause is the server's unpinned
+dependency; reinstall with `--with "mcp<2"`.
+
+### Notes
+
+The error line may name `context: 'shared-pool'`, which is the path that serves
+Cowork and Code sessions.
+
+Claude cannot debug any of this. `device_bash` sees only the connected folders,
+so the logs, the config and Things itself are all out of reach. Claude's job is
+to say Things is unavailable, skip every write, and put the held tasks in the
+report.
+
+Recorded 2026-09-17. Three runs named three causes — the Things app being
+closed, Full Disk Access, and the wrong Python version — and all three were
+wrong. The real cause was that the Automation prompt was on screen and was not
+clicked within sixty seconds. Say Things is unavailable and stop. Do not name a
+cause the log has not shown.
+
 ## The MCP is the only route
 
 Claude reaches Things 3 only through the local `things` MCP. Nothing else,
@@ -146,6 +218,9 @@ room to argue itself into a deletion.
 
 Changed 2026-09-13: Someday handed to Ray, the hidden rows recorded, the
 absence of a delete tool recorded, and the meaning of a date written down.
+
+Changed 2026-09-17: recorded the AppleScript permission hang and how to tell
+it from a server that never starts.
 
 Moved here from Google Drive `FACTS/` on 2026-09-16. Things 3 runs on both of
 Ray's Macs, so these rules have to travel with him. Drive does not. See
