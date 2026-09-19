@@ -138,6 +138,33 @@ Robotics and Advanced Robotics are Semester 1 only, ending 2027-01-15.
 Physics Red 2 and Physics Red 3 run lockstep, so one physics lesson is taught
 twice on a Red day.
 
+## Student information
+
+Named students carry information Ray is trusted with. Their names, absences,
+medical reasons, IEP and 504 details, and grades stay inside Things 3 and
+inside the school's own systems.
+
+None of it goes into the Drive Life folder. STATUS, DECISIONS, FACTS and the
+Daily Report are all read by Gemini, and the Spark emails the Daily Report
+back to Ray, so a student's name written there leaves Things, lands in a
+Google Doc, and then travels through email.
+
+The Daily Report says a task exists and points at Things for the detail:
+"One absent-work tracker to fill in for a student out next week." Never the
+name, never the reason.
+
+Inside Things the detail is welcome. That is where the work gets done, it is
+on Ray's own machine, and the forwarded email is usually already sitting
+there.
+
+The same holds in chat. Name a student only when Ray has named them first in
+that conversation.
+
+Recorded 2026-09-19. A daily-brief run read a forwarded email out of Things
+and wrote a student's name and her surgery into the Daily Report. Ray caught
+it. The skill already kept email senders and subjects out of that doc; it did
+not say this.
+
 ## Where this came from
 
 These facts lived only in the planning vault's STATUS.md, which Ray deleted on

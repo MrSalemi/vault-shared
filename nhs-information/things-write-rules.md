@@ -19,6 +19,12 @@ This is what happened on 2026-09-17, and it is the one to check first.
 
 **A timeout can mean a dialog is waiting on the screen right now.**
 
+**It asks every session.** Confirmed 2026-09-19. Granting the permission once
+does not make it stick; a fresh session raises the prompt again, and the first
+Things call of every run is the one that trips it. So a timeout on the first
+call is the expected case, not an outage. Ray answers the dialog and re-runs.
+This is why `daily-brief` touches Things before it reads anything else.
+
 The server drives Things through **AppleScript**, so macOS Automation
 permission governs it. When the grant is missing, macOS puts up a prompt. The
 server blocks until someone clicks it, and the handshake times out at about
@@ -166,6 +172,24 @@ never completes.
 
 This is the only standing approval. Every other thread shows Ray the proposed
 list first.
+
+## An appointment is not a task
+
+A meeting on Ray's calendar is already handled. He accepted it, it has a time,
+and it will happen. It does not need a task, and inventing prep for it is how a
+list fills with work nobody asked for.
+
+An appointment earns a task only when it displaces something dated, and then
+the task is the displaced work's new date, not the meeting.
+
+Visitors are the easy case to get wrong. Someone coming to see a class or a
+club during its normal meeting costs no extra time and usually needs nothing
+done. Do not write "have something ready" against it. If Ray wants to prepare,
+he knows.
+
+Recorded 2026-09-19. A daily-brief run turned a MathWorks visit to RoboNatick
+into a prep task, having first called it a conflict on the grounds that it
+overlapped the club it was visiting.
 
 ## Naming a task for its layer
 

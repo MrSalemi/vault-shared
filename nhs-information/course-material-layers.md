@@ -56,8 +56,39 @@ Unit 01 is E00 through E09, Electronics. Unit 02 is P01 through P05, Software
 Engineering. The sheet calls both "Exercise NN", so an Exercise number does not
 tell you which unit it belongs to. Check where the numbering restarts.
 
-As of 2026-09-10: Unit 01 is being taught and ends Tue 10/6. Unit 02 is built
+As of 2026-09-19: Unit 01 is being taught and ends Fri 10/2. Unit 02 is built
 and deployed and not yet scheduled. Unit 03 does not exist in any layer.
+
+That end date has moved twice. Take it from the sheet, not from here.
+
+## Who owns which layer
+
+Two kinds of Claude project, and they do not overlap.
+
+| Project | Owns | Means |
+|---|---|---|
+| Life Planning | Scheduled | the Red Blue 2627 sheet, every `CALENDAR.md`, and every dated task in Things 3 |
+| One per vault | Built, Deployed | lessons, worksheets, labs, guides — making them and putting them in Class Development |
+
+**Life Planning is the only writer of dates.** It re-cuts the `CALENDAR.md`
+files from the sheet and it creates the build, print and work-by-hand tasks with
+their deadlines already worked out. A vault thread reads its own `CALENDAR.md`
+and never edits it, and never writes to Things 3.
+
+**A vault project is the only writer of material.** It builds what the schedule
+asks for and deploys it. Life Planning names the work and dates it; it does not
+make it.
+
+The seam is a dated task. "Build 1.11 and 1.12, due Mon 9/21" is written by Life
+Planning, because the date comes off the sheet. The building happens in the
+physics project. Ray checks the task off; neither project completes anything.
+
+One writer per thing is the whole point. Two projects re-cutting the same
+calendar from the same sheet on different days is how they drift apart, and a
+vault thread that cannot see the other courses cannot tell whether a date it is
+about to write is already spoken for.
+
+Recorded 2026-09-19, stated by Ray.
 
 ## What "closed" means in a vault
 
