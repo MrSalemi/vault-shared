@@ -173,6 +173,16 @@ never completes.
 This is the only standing approval. Every other thread shows Ray the proposed
 list first.
 
+## The write test
+
+`daily-brief` and `physics-lesson-tasks` prove Things accepts writes before they
+depend on it. **Use `update_todo` with `when` set to the task's current start
+date.** Nothing changes, and every task in `get_today` has a start date.
+
+Do not use `notes` for this. A task with no notes has nothing to set it back to,
+and an empty `notes` value cannot be sent — the call fails before it reaches
+Things. Found 2026-09-21.
+
 ## An appointment is not a task
 
 A meeting on Ray's calendar is already handled. He accepted it, it has a time,

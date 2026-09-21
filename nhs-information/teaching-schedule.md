@@ -117,6 +117,84 @@ students will hand back with answers on it, Ray does first.
 
 A build task is not finished until its work-by-hand task exists.
 
+"Work it by hand" and "create the answer key" are the same job under two names.
+Use "Work <material> by hand".
+
+## What a lesson document creates
+
+A physics lesson produces two source documents in the vault, and each one
+creates its own set of tasks. **All of them are done before Ray teaches that
+lesson.**
+
+The naming is fixed:
+
+| Document | Where | Builds to |
+|---|---|---|
+| `lNNNN.md` | `physics/lectures/` | `Teaching Plan — NNNN <name>.pdf` |
+| `wNNNN.md` | `physics/guides/unit-NN/` | `WNNNN <name>.pdf` |
+
+`NNNN` is unit and lesson: `l0112` and `w0112` are Unit 01, lesson 1.12. Each
+file carries frontmatter, and **the frontmatter is the authority, not the
+filename** — `number` gives the lesson and `title` gives its human name ("1.12
+Acceleration Formula and Problems"). Take task names from `title`.
+
+`eNNNN` is an eval. It follows the worksheet rules **except PowerSchool** — an
+eval is formative, it tells Ray who is lost, and no grade is entered.
+
+`aNNNN` is a **retired answer sheet**, not an activity. Physics `DECISIONS #47`
+stopped Claude writing them on 2026-09-05; Ray works the sheet by hand and the
+scan goes straight to Drive. The files from `a0101` to `a0107` stay on disk only
+so their PDFs remain rebuildable. **They create no tasks**, and the numbering
+stopping at `0107` is that decision's fingerprint, not a gap.
+
+### From `lNNNN.md` — the Teaching Plan
+
+1. **Print the Teaching Plan** — Ray's own copy, not the students'.
+2. **Make the video** for that lesson.
+3. **Post the video to YouTube and link it in Google Classroom.**
+
+### From `wNNNN.md` — the worksheet
+
+1. **Build** it, if it does not exist yet.
+2. **Print it for all three physics sections.**
+3. **Work it by hand** — the scan becomes the answer key.
+4. **Capture it in PowerSchool.** The one task that comes **after** the class,
+   not before. Ray creates the assignment and enters grades in one sitting, right
+   after the worksheet is given. Date it for the day the **last** section gets
+   it, with the next day as the deadline.
+
+The other worksheet tasks, and all three Teaching Plan tasks, are done before
+the class.
+
+**Robotics and Engineering are the opposite.** Their PowerSchool assignments go
+in early, ahead of the work — the self-paced classes need the gradebook
+waiting. Only physics worksheets are captured after the fact.
+
+### A lecture with no worksheet, or the reverse
+
+Not every lesson has both. Create only the tasks for the documents that exist.
+A lab adopted as a ready-made handout — `handouts/unit-01/1.11 Acceleration Lab
+2026.pdf` is the example — has no `.md` source at all, so it creates nothing
+here; it still needs printing under the print-prep rule above.
+
+## Home or school
+
+**Only one of these tasks needs the building: printing the worksheets for
+students.** It needs the school copier and the student counts, so its date steps
+back to the last school day Ray is actually in.
+
+Everything else is home work — printing the Teaching Plan, working the sheet by
+hand, making the video, posting it, capturing in PowerSchool, and every build.
+Those can land on a weekend, a holiday or a day Ray is out sick, and they do not
+compete for a prep block.
+
+This is why a build can sit on Yom Kippur and why answer keys get done on a
+Sunday. Never push a home task forward to the next school day — that throws away
+the days Ray actually uses for it and stacks work onto blocks that have none
+free.
+
+Recorded 2026-09-20, stated by Ray.
+
 ## Print prep — engineering and robotics
 
 Different rule. All engineering and robotics projects are printed **before**
