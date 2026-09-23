@@ -153,6 +153,10 @@ stopping at `0107` is that decision's fingerprint, not a gap.
 2. **Make the video** for that lesson.
 3. **Post the video to YouTube and link it in Google Classroom.**
 
+**The video tasks get a start date and no deadline.** Ray does not need the
+video to teach the class, so nothing hangs on it. Give them a date so they show
+up, and never a deadline.
+
 ### From `wNNNN.md` — the worksheet
 
 1. **Build** it, if it does not exist yet.
@@ -176,6 +180,12 @@ Not every lesson has both. Create only the tasks for the documents that exist.
 A lab adopted as a ready-made handout — `handouts/unit-01/1.11 Acceleration Lab
 2026.pdf` is the example — has no `.md` source at all, so it creates nothing
 here; it still needs printing under the print-prep rule above.
+
+### An edit after printing is for next year
+
+Ray often edits a worksheet after it is printed and worked by hand. That edit is
+for next year's class, not this one — the printed stack and the scanned key
+stay as they are. Do not flag it as drift, and do not create a reprint task.
 
 ## Home or school
 

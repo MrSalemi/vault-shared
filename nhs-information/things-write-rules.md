@@ -183,6 +183,16 @@ Do not use `notes` for this. A task with no notes has nothing to set it back to,
 and an empty `notes` value cannot be sent — the call fails before it reaches
 Things. Found 2026-09-21.
 
+## Which Mac this session reads
+
+A Cowork session reads Things on whichever Mac it is linked to — usually the home
+Mac. Ray often works from the school laptop. A change he makes there reaches the
+home Mac only when Things Cloud syncs, so for a while the session reads the old
+list.
+
+When Ray says a task is gone, it is gone. Do not argue from a read, and do not
+raise it again that run. Found 2026-09-22.
+
 ## An appointment is not a task
 
 A meeting on Ray's calendar is already handled. He accepted it, it has a time,
