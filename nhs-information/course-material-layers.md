@@ -75,6 +75,12 @@ files from the sheet and it creates the build, print and work-by-hand tasks with
 their deadlines already worked out. A vault thread reads its own `CALENDAR.md`
 and never edits it, and never writes to Things 3.
 
+**Life Planning may edit anything in a vault except curriculum.** `STATUS.md`,
+`DECISIONS.md`, `CALENDAR.md` and the notes around them are all fair game — when
+dates move, the `STATUS.md` line that states them moves too, in the same run.
+What it never modifies is curriculum: lectures, worksheets, evals, labs, guides
+and lesson plans. Those belong to the vault's own project.
+
 **A vault project is the only writer of material.** It builds what the schedule
 asks for and deploys it. Life Planning names the work and dates it; it does not
 make it.
