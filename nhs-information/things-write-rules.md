@@ -25,6 +25,11 @@ Things call of every run is the one that trips it. So a timeout on the first
 call is the expected case, not an outage. Ray answers the dialog and re-runs.
 This is why `daily-brief` touches Things before it reads anything else.
 
+**Count the dialogs: four.** Seen 2026-09-26. Three appear when Claude Desktop
+starts, and one more when a run makes its first Things call. Miss any of them
+and the server can come up `failed`. So after a restart, stay at the screen
+until the first Things call has gone through, not just until the app opens.
+
 The server drives Things through **AppleScript**, so macOS Automation
 permission governs it. When the grant is missing, macOS puts up a prompt. The
 server blocks until someone clicks it, and the handshake times out at about

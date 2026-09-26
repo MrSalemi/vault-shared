@@ -103,6 +103,12 @@ closed to teaching. A closed unit is usually the one being taught right now.
 
 A vault `CALENDAR.md` is a copy of the sheet and goes stale. The sheet wins.
 
+## Before calling something missing from a vault
+
+This session reads the home Mac's copy of the vaults. Work done on the school
+laptop is not there until Ray pulls. **Ask Ray to run `pullvaults` before saying
+a file is missing, and before writing that into any `STATUS.md`.**
+
 ## Naming work by layer
 
 **Build** means the source does not exist. **Deploy** means it exists in the
