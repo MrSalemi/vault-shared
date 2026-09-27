@@ -45,7 +45,7 @@ set -e
 #            and the built PDFs.
 #
 # They are separate folders: the builder is one clone at ~/vaults/shared,
-# symlinked into nhsengineering, nhsrobotics, advrobotics, physics and any
+# symlinked into engineering, robotics, advrobotics, physics and any
 # future vault as shared/, so nothing below may assume it sits beside the
 # guides. Run this script from the folder holding the guides. The old layout,
 # where they were one folder, still works.

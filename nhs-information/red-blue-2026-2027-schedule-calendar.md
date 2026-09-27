@@ -4,8 +4,8 @@
 
 **This file holds only the cycle-day schedule, holidays, and term boundaries — infrastructure shared by every course.** Per-course due dates and exams live in each course's own repo instead, since students don't overlap between Physics, Robotics, and Engineering, and a thread about one has no use for another's dates.
 
-- Engineering Blue 1 — `nhsengineering/CALENDAR.md`
-- Robotics Red 1 — `nhsrobotics/CALENDAR.md`
+- Engineering Blue 1 — `engineering/CALENDAR.md`
+- Robotics Red 1 — `robotics/CALENDAR.md`
 - Advanced Robotics — `advrobotics/CALENDAR.md` (not in the source calendar; file explains why)
 - Physics Blue 2, Red 2, Red 3 — `physics/CALENDAR.md`
 - RoboNatick (after-school FTC program, not a course) — `robonatick/CALENDAR.md` (not in the source calendar; dates entered by hand)

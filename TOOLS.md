@@ -17,8 +17,8 @@ One clone, shared by every vault:
 ```
 ~/vaults/
     shared/            ← this repo, MrSalemi/vault-shared, branch master
-    nhsrobotics/       shared -> ../shared
-    nhsengineering/    shared -> ../shared
+    robotics/          shared -> ../shared   (GitHub repo: nhsrobotics)
+    engineering/       shared -> ../shared   (GitHub repo: nhsengineering)
     advrobotics/       shared -> ../shared
     physics/           shared -> ../shared
     robonatick/        shared -> ../shared
@@ -26,7 +26,7 @@ One clone, shared by every vault:
 
 Each vault holds `shared` as a **committed relative symlink**, not a submodule.
 That changed on 2026-08-29; anything you read that says "submodule" or "pin" is
-stale. See nhsrobotics DECISIONS #45 for why.
+stale. See robotics DECISIONS #45 for why.
 
 **What this means for you, and it is the whole point:** there is no pin to bump
 and no per-vault update. Edit `~/vaults/shared/build.js` and every vault sees it
@@ -88,7 +88,7 @@ If that fails with "could not lock config file", a stale lock is in the way:
 `find ~/vaults/shared/.git -name '*.lock' -delete`.
 
 **Branch names are not consistent across Ray's repos.** `vault-shared` is
-`master`. `nhsrobotics` is `main`. Never guess — `git branch -r` after a fetch,
+`master`. `robotics` is `main`. Never guess — `git branch -r` after a fetch,
 or read the branch dropdown on GitHub.
 
 ---
@@ -104,7 +104,7 @@ The only thing anyone runs directly. **Run it from the folder the guides are
 in**, never from here:
 
 ```bash
-cd ~/vaults/nhsrobotics/guides
+cd ~/vaults/robotics/guides
 ../shared/build-all.sh              # build every guide that needs it
 ../shared/build-all.sh p02.md       # build just one
 ../shared/build-all.sh -f           # rebuild everything, current or not
@@ -191,7 +191,7 @@ silently broken for two weeks. If you rename anything here, grep the vaults.
 ### `test-build.js` — the suite
 
 ```bash
-cd ~/vaults/nhsrobotics/guides && node ../shared/test-build.js
+cd ~/vaults/robotics/guides && node ../shared/test-build.js
 node ~/vaults/shared/test-build.js test-fixtures      # what CI runs
 NO_SOFFICE=1 node test-build.js test-fixtures         # what CI *sees*
 ```
@@ -342,7 +342,7 @@ The suite reads `.docx` XML and cannot see a page. After any change to fonts,
 sizes, spacing, pictures or tables:
 
 ```bash
-cd ~/vaults/nhsrobotics/guides
+cd ~/vaults/robotics/guides
 ../shared/build-all.sh -f                    # page counts for every guide
 
 pdfinfo  P00_First_Lights_Guide.pdf          # producer, page count, page size
@@ -468,7 +468,7 @@ conversion or deployment, it has to be run on a machine that has LibreOffice.
 pictures or tables also needs:
 
 ```bash
-cd ~/vaults/nhsrobotics/guides && ../shared/build-all.sh -f
+cd ~/vaults/robotics/guides && ../shared/build-all.sh -f
 ```
 
 and a look at the page counts and at a rendered page. A change here reaches
@@ -499,7 +499,7 @@ git push                          # the hook runs preflight and can refuse
   `show`, `ls-tree`, `cat-file`, `rev-list` — nothing that refreshes the index.
 - A submodule clone has no fetch refspec, so `origin/master` does not exist and
   every diagnostic returns "unknown revision" instead of telling you why.
-- `vault-shared` is `master`. `nhsrobotics` is `main`. Check, do not guess.
+- `vault-shared` is `master`. `robotics` is `main`. Check, do not guess.
 - Course-side scripts reference `../shared/…` by hand. Renaming anything here
   requires grepping the vaults; `worksheet.js` was broken for two weeks this way.
 - `build-all.sh` resolves the deploy target only on `-d`, on purpose. Do not

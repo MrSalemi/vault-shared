@@ -7,13 +7,13 @@ to hand-edit by mistake. The markdown is the only copy anyone can edit. That
 used to be a rule people had to remember; now it is just true.
 
 **This repo is shared.** One clone at `~/vaults/shared`, symlinked into
-`nhsengineering`, `nhsrobotics`, `advrobotics`, `physics` and `robonatick` as
+`engineering`, `robotics`, `advrobotics`, `physics` and `robonatick` as
 `shared/`. It holds no guides, no pictures and no course text — all of that
 lives with the course, and the builder is told where to find it.
 
 ~~It is a submodule, each vault pinning its own commit.~~ — 2026-08-29: no
 longer. It is a symlink to a sibling directory, so an edit reaches every vault
-at once and there is no pin to bump. See nhsrobotics DECISIONS #45.
+at once and there is no pin to bump. See robotics DECISIONS #45.
 
 **Changing this repo? Read [TOOLS.md](TOOLS.md) first** — what every tool is,
 the external programs and fonts it needs with working versions, and the
