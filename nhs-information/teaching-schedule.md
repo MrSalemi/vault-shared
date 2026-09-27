@@ -126,6 +126,17 @@ students will hand back with answers on it, Ray does first.
 
 A build task is not finished until its work-by-hand task exists.
 
+## Complete the solutions before printing
+
+Before a physics worksheet prints, Ray completes its solutions. That is how an
+error in the sheet gets caught before a stack of copies goes out. Phrase it
+"Complete W0112 solutions before printing".
+
+It is home work. Its deadline is the print day, and the print task depends on
+it.
+
+Recorded 2026-09-27, stated by Ray after he found an error in W0113.
+
 "Work it by hand" and "create the answer key" are the same job under two names.
 Use "Work <material> by hand".
 
@@ -169,9 +180,11 @@ up, and never a deadline.
 ### From `wNNNN.md` — the worksheet
 
 1. **Build** it, if it does not exist yet.
-2. **Print it for all three physics sections.**
-3. **Work it by hand** — the scan becomes the answer key.
-4. **Capture it in PowerSchool.** The one task that comes **after** the class,
+2. **Complete the solutions** — before it prints. This catches an error in the
+   sheet before students get it.
+3. **Print it for all three physics sections.**
+4. **Work it by hand** — the scan becomes the answer key.
+5. **Capture it in PowerSchool.** The one task that comes **after** the class,
    not before. Ray creates the assignment and enters grades in one sitting, right
    after the worksheet is given. Date it for the day the **last** section gets
    it, with the next day as the deadline.
