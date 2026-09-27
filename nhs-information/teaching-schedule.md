@@ -78,6 +78,15 @@ the same cost as an exam. Grading one section — exam or lab — takes at
 least 80 minutes, one full block. Three physics sections needing grading
 means three blocks. A Blue day can absorb two; a Red day can absorb one.
 
+**Grading and PowerSchool happen at the same time.** Ray enters grades in
+PowerSchool as he grades. There is no separate "Update PowerSchool" task after
+grading — not for exams, labs, make-ups or retakes. The grading task covers it.
+
+Creating the assignment in PowerSchool is different. Ray still puts an
+assignment into PowerSchool when it is assigned, not when it is graded.
+
+Recorded 2026-09-27, stated by Ray.
+
 ## Print prep — physics
 
 Everything made for physics gets printed, and printed the school day before
