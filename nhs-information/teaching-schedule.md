@@ -275,6 +275,22 @@ and wrote a student's name and her surgery into the Daily Report. Ray caught
 it. The skill already kept email senders and subjects out of that doc; it did
 not say this.
 
+## Block 2 plays morning announcements
+
+Ray plays the morning announcements in block 2. So every Physics Red 2 and
+Physics Blue 2 lesson plan has "Play morning announcements" right after
+attendance, exam days included. Red 3 is block 3 and does not.
+
+Recorded 2026-09-29, stated by Ray.
+
+## Red 3 takes first lunch on exam days
+
+On every physics exam day, Physics Red 3 goes to first lunch so the test is
+not cut in half. Ray emails the class the day before and again on the exam
+morning, and the Red 3 exam plan tells them at the start of class.
+
+Recorded 2026-09-29, stated by Ray.
+
 ## Where this came from
 
 These facts lived only in the planning vault's STATUS.md, which Ray deleted on
