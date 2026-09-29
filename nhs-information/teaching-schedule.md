@@ -275,6 +275,18 @@ and wrote a student's name and her surgery into the Daily Report. Ray caught
 it. The skill already kept email senders and subjects out of that doc; it did
 not say this.
 
+## The physics packet is for planning only
+
+Ray no longer prints, hands out, or posts the unit packet. Students get the
+worksheets and teaching material built in the vault, and the same content in
+two places makes no sense. So never create a task to print a packet, hand
+one out, or put one in Google Classroom.
+
+The packet stays as Ray's planning source for what a unit covers. That may
+end once the vault holds a full curriculum.
+
+Recorded 2026-09-29, stated by Ray.
+
 ## Block 2 plays morning announcements
 
 Ray plays the morning announcements in block 2. So every Physics Red 2 and

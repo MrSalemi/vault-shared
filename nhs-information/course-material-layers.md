@@ -29,7 +29,7 @@ holds the Red Blue 2627 Calendar. Both computers can reach it.
 Class Development/
   Red Blue 2627 Calendar          the sheet
   Engineering/Projects/           deployed engineering units
-  Physics/                        deployed physics packets
+  Physics/                        physics unit folders (the packet is for planning only)
   Robotics/, Advanced Robotics/   their own material
   RoboNatick/                     the FTC program
 ```
