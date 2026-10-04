@@ -173,9 +173,9 @@ stopping at `0107` is that decision's fingerprint, not a gap.
 2. **Make the video** for that lesson.
 3. **Post the video to YouTube and link it in Google Classroom.**
 
-**The video tasks get a start date and no deadline.** Ray does not need the
-video to teach the class, so nothing hangs on it. Give them a date so they show
-up, and never a deadline.
+**The video tasks get no date and no deadline.** Ray does not need the video
+to teach the class, so nothing hangs on it. They sit in Anytime. See
+`things-write-rules.md`, "Today holds only what must be done today".
 
 ### From `wNNNN.md` — the worksheet
 

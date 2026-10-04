@@ -239,6 +239,42 @@ sit undated until the project goes active.
 
 Recorded 2026-09-13.
 
+## Today holds only what must be done today
+
+Ray's Today list is the list of things he NEEDS to do that day. Nothing else
+goes on it. A day he is doing nothing shows an empty list.
+
+**The test for every task: if this is not done today, what breaks, and how
+badly?** Priority is measured by how much it hurts Ray if the task is not done.
+
+- **It hurts today.** The task gets today's date. Printing a worksheet the
+  class uses tomorrow is the shape.
+- **It hurts on a later day.** The task gets that later day as its start date,
+  not an earlier one. Never date a task early "so there is time", and never
+  pull one earlier because the days before its deadline look full.
+- **It never hurts.** The task gets no date. It sits in Anytime, where Ray
+  picks it up when he has the time and the energy. The lesson videos are the
+  shape, and so is a survey he may skip.
+
+Never date a task so that it "shows up". A date that is not a must-do day is
+how Today fills with work Ray cannot do, and a full list on an empty day
+teaches him to stop trusting the list.
+
+A day Ray is away gets no tasks. When the must-do day has more work than
+blocks, do not move a task onto an earlier day to make it fit. Leave the dates
+where they are and tell Ray in one line which day is over-full. He picks what
+moves.
+
+Corrected 2026-10-04. The first version said to work the must-do day out from
+the free blocks before the deadline. That put a build on a Sunday that was not
+due until Tuesday, and Ray asked why it was on his list.
+
+When a task is not done on its must-do day, move it to the next day it can
+still be done without hurting, or drop its date if nothing hangs on it. Do not
+leave it sitting on Today as overdue.
+
+Recorded 2026-10-03, stated by Ray.
+
 ## Why the rules exist
 
 Nothing enforces them. Cowork has no read-only tier, so these sentences are
