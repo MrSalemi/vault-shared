@@ -87,6 +87,24 @@ assignment into PowerSchool when it is assigned, not when it is graded.
 
 Recorded 2026-09-27, stated by Ray.
 
+## Email home for D students
+
+Four weeks before the end of each term, Ray sends an email home to the parents
+of every student who has a D.
+
+This is a task in Things 3 with a deadline. The deadline is the day four weeks
+before the term ends. Title it "Email home to parents of D students — Term 1",
+naming the term. It is for all of his classes, so it carries no class tag.
+
+Work the date out from the term end. Term ends are in
+`red-blue-2026-2027-schedule-calendar.md`, "Term boundaries", and on the Red
+Blue sheet as "End of Term". Never copy the date from last term's task.
+
+The task names no student. Who has a D stays in PowerSchool. See "Student
+information".
+
+Recorded 2026-10-05, stated by Ray.
+
 ## Print prep — physics
 
 Everything made for physics gets printed, and printed the school day before
