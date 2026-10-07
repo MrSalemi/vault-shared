@@ -160,7 +160,7 @@ Use "Work <material> by hand".
 
 ## What a lesson document creates
 
-A physics lesson produces two source documents in the vault, and each one
+A physics lesson produces up to three source documents in the vault, and each one
 creates its own set of tasks. **All of them are done before Ray teaches that
 lesson.**
 
@@ -170,6 +170,7 @@ The naming is fixed:
 |---|---|---|
 | `lNNNN.md` | `physics/lectures/` | `Teaching Plan — NNNN <name>.pdf` |
 | `wNNNN.md` | `physics/guides/unit-NN/` | `WNNNN <name>.pdf` |
+| `pNNNN.md` | `physics/guides/unit-NN/` | `LPNNNN <name> Lesson Plan.pdf` |
 
 `NNNN` is unit and lesson: `l0112` and `w0112` are Unit 01, lesson 1.12. Each
 file carries frontmatter, and **the frontmatter is the authority, not the
@@ -213,6 +214,54 @@ the class.
 **Robotics and Engineering are the opposite.** Their PowerSchool assignments go
 in early, ahead of the work — the self-paced classes need the gradebook
 waiting. Only physics worksheets are captured after the fact.
+
+### From `pNNNN.md` — the Lesson Plan
+
+**One lesson plan per lesson, shared by all three sections.** It replaced the
+dated, per-section files in `physics/lesson-plans/` on 2026-10-07. Those took
+three files per lesson and had to be ticked off in Obsidian, which Ray could not
+do in the middle of class.
+
+The plan is a PDF. Ray prints it or imports it into GoodNotes and marks it by
+hand. **Nothing reads it back.** There is no loop from the marked plan to a
+thread; when a lesson does not finish, Ray changes the Red Blue sheet and the
+plans follow the sheet.
+
+The layout is fixed:
+
+1. A lead line with each section's date.
+2. The steps, as a table: one row per step and a box each for Blue 2, Red 2 and
+   Red 3. `<widths 6 1 1 1>` goes on the line above the table.
+3. **Bring**, **Students will be able to**, **Massachusetts standards**,
+   **Watch for**.
+
+Two pages at most, with the table at the top of page one. Every step goes in
+for all three sections, morning announcements included; Ray skips what does not
+apply. Exam, review and lab days get the same plan.
+
+**Link every material the plan names.** The link opens the source in Obsidian
+and prints as its label, so the PDF reads the same. A link to another guide
+needs a label or the build stops: `[[w0204|W0204]]`. Inside the steps table the
+bar takes a backslash: `[[w0204\|W0204]]`. Added 2026-10-07, Ray.
+
+It lives beside the worksheet and builds into the same lesson folder:
+
+```
+physics/guides/unit-02/p0203.md   ->   0203/LP0203 Free Fall Lab Lesson Plan.pdf
+```
+
+**Life Planning writes it, builds it and deploys it**, naming the file so
+nothing else in the folder is rebuilt:
+
+```
+cd ~/vaults/physics/guides/unit-02
+../../shared/build-all.sh -d p0203.md
+```
+
+It creates one task, **"Print or import the 2.3 lesson plan (LP0203)"**, dated
+and due the day the first section takes the lesson.
+
+Recorded 2026-10-07, stated by Ray.
 
 ### A lecture with no worksheet, or the reverse
 
@@ -307,9 +356,10 @@ Recorded 2026-09-29, stated by Ray.
 
 ## Block 2 plays morning announcements
 
-Ray plays the morning announcements in block 2. So every Physics Red 2 and
-Physics Blue 2 lesson plan has "Play morning announcements" right after
-attendance, exam days included. Red 3 is block 3 and does not.
+Ray plays the morning announcements in block 2, which is Physics Red 2 and
+Physics Blue 2. One lesson plan now serves all three sections, so every plan
+has "Play morning announcements" right after attendance, exam days included.
+Ray skips it for Red 3.
 
 Recorded 2026-09-29, stated by Ray.
 
@@ -317,7 +367,7 @@ Recorded 2026-09-29, stated by Ray.
 
 On every physics exam day, Physics Red 3 goes to first lunch so the test is
 not cut in half. Ray emails the class the day before and again on the exam
-morning, and the Red 3 exam plan tells them at the start of class.
+morning. It is not a step in the lesson plan; the email and the task carry it.
 
 Recorded 2026-09-29, stated by Ray.
 

@@ -19,7 +19,7 @@ at once and there is no pin to bump. See robotics DECISIONS #45.
 the external programs and fonts it needs with working versions, and the
 `preflight.sh` gate that must pass before a push.
 
-*V05*
+*V06*
 
 ## What a guides folder looks like
 
@@ -106,6 +106,7 @@ command line skips extras.
 | `$\frac{a}{b}$` | a real equation — see below |
 | `<space>` | blank space to write in, one line's worth |
 | `<newpage>` | start a new page here |
+| `<widths 5 1 1 1>` | column proportions for the table on the next line |
 | `[label](target)`, `[[target\|label]]` | **the label only** |
 | `{{NAME}}` | whatever `course.js` says |
 
@@ -165,6 +166,10 @@ has nothing to pair with. Write `\$` for a literal dollar next to another.
   run to the next sheet and leaves the current one nearly empty.
 - **`***bold italic***` is not in the grammar** — only `**bold**` and
   `*italic*` separately. Triple asterisks print as literal asterisks.
+- **A table's columns are equal unless told otherwise.** Put `<widths 5 1 1 1>`
+  on the line above a table and the first column is five times as wide as each
+  of the others. One number per column, or the build stops. Physics lesson plans
+  use it for a column of steps beside three boxes to tick.
 - **A table's first row is its header.** A parts list whose first row is really
   data needs a header written for it.
 - **Math needs a base inside the `$`.** `m/s$^2$` is legal LaTeX and is

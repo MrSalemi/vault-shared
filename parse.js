@@ -1,5 +1,5 @@
 // Markdown -> block list for build.js.
-// V03
+// V04
 //
 // Supported:
 //   ---            frontmatter (out, version, title)
@@ -15,6 +15,7 @@
 //   | a | b |      table             -> table
 //   <space>        one blank line of writing room -> space
 //   <newpage>      start a new page here          -> newpage
+//   <widths 5 1 1> column proportions for the next table -> on the table
 //   text           paragraph         -> p
 //
 // Placeholders {{SAVE}}, {{PARTA}}, {{GRADING}} are substituted before parsing.
@@ -40,6 +41,7 @@ function parse(src, vars = {}) {
   const lines = body.split(/\r?\n/);
   const blocks = [];
   let i = 0;
+  let widths = null;        // from a <widths> line, waiting for its table
 
   const flushList = (marker, kind) => {
     const items = [];
@@ -54,6 +56,30 @@ function parse(src, vars = {}) {
     const line = lines[i];
 
     if (!line.trim()) { i++; continue; }
+
+    // Column widths for the table that follows, as proportions:
+    // <widths 5 1 1 1> makes the first column five times as wide as each of
+    // the others. Without it a table shares the width evenly, which suits a
+    // parts list and wastes most of the page on a checklist -- a column of
+    // steps beside three narrow boxes to tick. Physics lesson plans are that.
+    //
+    // Opt-in on purpose. Obsidian pads a separator row's dashes to the width
+    // of the cell text, so reading widths from the dashes would silently have
+    // reshaped every table already written in five vaults.
+    //
+    // A <widths> with no table under it is a mistake in the guide, and it is
+    // reported rather than dropped: build.js refuses a "badwidths" block.
+    const wd = line.trim().match(/^<widths((?:\s+\d+(?:\.\d+)?)+)\s*>$/);
+    if (wd) {
+      if (widths) blocks.push(["badwidths"]);
+      widths = wd[1].trim().split(/\s+/).map(Number);
+      i++;
+      continue;
+    }
+    if (widths && !line.trim().startsWith("|")) {
+      blocks.push(["badwidths"]);
+      widths = null;
+    }
 
     if (line.startsWith("```")) {              // fenced code
       i++;
@@ -129,7 +155,9 @@ function parse(src, vars = {}) {
       i += 2;
       const body = [];
       while (i < lines.length && lines[i].trim().startsWith("|")) { body.push(cut(lines[i])); i++; }
-      blocks.push(["table", {head, align, body}]);
+      const table = {head, align, body};
+      if (widths) { table.widths = widths; widths = null; }
+      blocks.push(["table", table]);
       continue;
     }
 
@@ -140,6 +168,8 @@ function parse(src, vars = {}) {
     blocks.push(["p", line.trim()]);
     i++;
   }
+
+  if (widths) blocks.push(["badwidths"]);
 
   if (meta.title) blocks.unshift(["title", meta.title]);
   return [meta, blocks];

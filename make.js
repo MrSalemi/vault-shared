@@ -1,5 +1,5 @@
 // Build one guide from markdown.
-// V03
+// V04
 //
 //   node make.js p02.md            -> writes the .docx named in the frontmatter
 //   PAD_EVEN=1 node make.js p02.md -> adds a blank page for duplex printing
@@ -89,7 +89,7 @@ const [meta, blocks] = parse(src, vars);
 // than as an exception a plain try/catch would see. Caught with .catch() for
 // that reason -- wrapping the call in try/catch looks right and does nothing.
 build(meta.out, meta.version, blocks, contentDir).catch(e => {
-  if (e && e.mathError) {
+  if (e && (e.mathError || e.guideError)) {
     console.error(`${mdPath}: ${e.message}`);
     process.exit(1);
   }

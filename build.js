@@ -1,4 +1,4 @@
-// Guide generator V05.
+// Guide generator V06.
 // Inline markup in any text: `code`, $math$, **bold**, *italic*, and links,
 // which print as their label only.
 const d = require('docx');
@@ -237,20 +237,38 @@ function imageBlock(spec, contentDir, o = {}) {
   });
 }
 
-// A table. Columns share the text width evenly, because the tables in these
-// guides are parts lists -- a name and a picture -- and nothing has asked for
-// more control than that yet.
+// A table. Columns share the text width evenly, because most tables in these
+// guides are parts lists -- a name and a picture. A <widths 5 1 1 1> line
+// directly above a table sets proportions instead; parse.js hangs them on the
+// table as spec.widths. Added for physics lesson plans, where a column of steps
+// sits beside three narrow boxes to tick.
 //
 // A cell holding nothing but a picture becomes that picture, scaled to fit its
 // column. A cell may also be empty: the resistor row in a parts table has no
 // picture on purpose, and an empty cell has to stay empty rather than collapse.
 const TABLE_BORDER = "808080";
 
+// A mistake in the markdown rather than a crash in the builder. make.js prints
+// these as the file and the problem, with no stack trace.
+const guideError = msg => Object.assign(new Error(msg), {guideError: true});
+
 function tableBlock(spec, contentDir) {
   const cols = Math.max(spec.head.length, ...spec.body.map(r => r.length));
-  const width = Math.floor(PAGE_W / cols);
-  const widths = Array(cols).fill(width);
-  widths[cols - 1] += PAGE_W - width * cols;        // absorb the rounding
+  let widths;
+  if (spec.widths) {
+    if (spec.widths.length !== cols || spec.widths.some(w => !(w > 0))) {
+      throw guideError(
+        `<widths> gives ${spec.widths.length} width(s) and the table under it ` +
+        `has ${cols} column(s)\n  every column needs a width above zero`);
+    }
+    const total = spec.widths.reduce((a, w) => a + w, 0);
+    widths = spec.widths.map(w => Math.floor(PAGE_W * w / total));
+    widths[cols - 1] += PAGE_W - widths.reduce((a, w) => a + w, 0);
+  } else {
+    const width = Math.floor(PAGE_W / cols);
+    widths = Array(cols).fill(width);
+    widths[cols - 1] += PAGE_W - width * cols;      // absorb the rounding
+  }
 
   const line = {style: BorderStyle.SINGLE, size: 4, color: TABLE_BORDER};
   const ALIGN = {left: AlignmentType.LEFT, right: AlignmentType.RIGHT,
@@ -394,6 +412,10 @@ function render(blocks, contentDir) {
       // A <newpage> with nothing after it therefore breaks nothing, which is
       // what we want: PAD_EVEN adds its own trailing break to pad an odd
       // guide to even, and a second one would print a stray blank sheet.
+    } else if (kind === "badwidths") {
+      throw guideError(
+        "<widths> has no table under it\n" +
+        "  put it on the line directly above the table it sizes");
     } else if (kind === "p") {
       out.push(para(payload, {brk}));
     } else if (kind === "b") {

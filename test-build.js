@@ -780,6 +780,62 @@ async function main() {
   check('and a NODE_OPTIONS already set reaches it too',
         /--max-old-space-size=512/.test(handed), handed);
 
+  // --- <widths> sets a table's column proportions -------------------------
+  // Added for physics lesson plans: a column of steps beside three narrow
+  // boxes to tick. Shared evenly, the steps wrap to three lines each and a
+  // one-page checklist runs to three. Opt-in, so every table already written
+  // keeps its even split.
+  //
+  // Read from the table grid in the XML, so it runs on the CI runner.
+  console.log('\n<widths> sets column proportions for the next table');
+  const gridsOf = xml => [...xml.matchAll(/<w:tblGrid>(.*?)<\/w:tblGrid>/g)]
+    .map(m => [...m[1].matchAll(/w:w="(\d+)"/g)].map(g => +g[1]));
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  const wW = scratchUnit();
+  const wMd = path.join(wW, 'g.md');
+  fs.writeFileSync(wMd, guide(
+    '<widths 5 1 1 1>\n\n' +
+    '| Step | A | B | C |\n| --- | --- | --- | --- |\n| Attendance | | | |\n\n' +
+    'Words between the two tables.\n\n' +
+    '| Part | Picture |\n| --- | --- |\n| Wire | |\n'
+  ));
+  const rW = build(wW, wMd);
+  check('builds', rW.ok, rW.err.trim());
+  if (rW.ok) {
+    const {text, xml} = await textOf(path.join(wW, 'Test.docx'));
+    const [sized, plain] = gridsOf(xml);
+    check('the first column is several times the others',
+          sized && sized.length === 4 && sized[0] >= 4 * sized[1], JSON.stringify(sized));
+    check('the narrow columns match each other',
+          sized && Math.abs(sized[1] - sized[2]) <= 1, JSON.stringify(sized));
+    check('the sized table still fills the text width',
+          sized && plain && sum(sized) === sum(plain), JSON.stringify([sized, plain]));
+    check('a table with no <widths> above it still splits evenly',
+          plain && plain.length === 2 && Math.abs(plain[0] - plain[1]) <= 1,
+          JSON.stringify(plain));
+    check('the token itself does not print', !/widths/.test(text), text);
+  }
+
+  for (const [name, body, wanted] of [
+    ['a <widths> with the wrong number of columns',
+     '<widths 5 1>\n\n| Step | A | B |\n| --- | --- | --- |\n| x | | |\n',
+     /2 width\(s\).*3 column\(s\)/s],
+    ['a <widths> with no table under it',
+     '<widths 5 1>\n\nJust a paragraph.\n',
+     /no table under it/],
+    ['a <widths> at the very end of a guide',
+     'A paragraph.\n\n<widths 5 1>\n',
+     /no table under it/],
+  ]) {
+    const wB = scratchUnit();
+    const srcB = path.join(wB, 'g.md');
+    fs.writeFileSync(srcB, guide(body));
+    const rB = build(wB, srcB);
+    check(`${name} fails the build`, !rB.ok);
+    check(`${name} says why`, wanted.test(rB.err), rB.err.trim());
+    check(`${name} names the file`, /g\.md/.test(rB.err), rB.err.trim());
+  }
+
   console.log('\ntopdf.js finds soffice without a shell');
   const topdfSrc = fs.readFileSync(path.join(__dirname, 'topdf.js'), 'utf8');
   check('it spawns nothing with shell: true',

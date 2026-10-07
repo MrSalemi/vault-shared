@@ -81,6 +81,10 @@ dates move, the `STATUS.md` line that states them moves too, in the same run.
 What it never modifies is curriculum: lectures, worksheets, evals, labs and
 guides. Those belong to the vault's own project. **Lesson plans are planning,
 not curriculum** (Ray, 2026-10-01), so Life Planning may write and fix them.
+From 2026-10-07 a lesson plan is `pNNNN.md` in the unit's guides folder, beside
+the worksheet, and Life Planning builds and deploys it with `build-all.sh -d
+<file>`. That is the one thing Life Planning puts into Class Development. See
+`teaching-schedule.md`, "From `pNNNN.md` — the Lesson Plan".
 
 **A vault project is the only writer of material.** It builds what the schedule
 asks for and deploys it. Life Planning names the work and dates it; it does not
