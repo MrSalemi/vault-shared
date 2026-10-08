@@ -177,8 +177,8 @@ file carries frontmatter, and **the frontmatter is the authority, not the
 filename** — `number` gives the lesson and `title` gives its human name ("1.12
 Acceleration Formula and Problems"). Take task names from `title`.
 
-`eNNNN` is an eval. It follows the worksheet rules **except PowerSchool** — an
-eval is formative, it tells Ray who is lost, and no grade is entered.
+`eNNNN` is an eval. It follows the worksheet rules. An eval is formative: it
+tells Ray who is lost, and no grade is entered.
 
 `aNNNN` is a **retired answer sheet**, not an activity. Physics `DECISIONS #47`
 stopped Claude writing them on 2026-09-05; Ray works the sheet by hand and the
@@ -203,17 +203,15 @@ to teach the class, so nothing hangs on it. They sit in Anytime. See
    sheet before students get it.
 3. **Print it for all three physics sections.**
 4. **Work it by hand** — the scan becomes the answer key.
-5. **Capture it in PowerSchool.** The one task that comes **after** the class,
-   not before. Ray creates the assignment and enters grades in one sitting, right
-   after the worksheet is given. Date it for the day the **last** section gets
-   it, with the next day as the deadline.
 
-The other worksheet tasks, and all three Teaching Plan tasks, are done before
+All four worksheet tasks, and all three Teaching Plan tasks, are done before
 the class.
 
-**Robotics and Engineering are the opposite.** Their PowerSchool assignments go
-in early, ahead of the work — the self-paced classes need the gradebook
-waiting. Only physics worksheets are captured after the fact.
+**A worksheet gets no PowerSchool task.** There is no "Capture in PowerSchool"
+task. Ray trashed every one that was made, and dropped the rule on 2026-10-08.
+
+**Robotics and Engineering** PowerSchool assignments go in early, ahead of the
+work — the self-paced classes need the gradebook waiting.
 
 ### From `pNNNN.md` — the Lesson Plan
 
@@ -283,7 +281,7 @@ students.** It needs the school copier and the student counts, so its date steps
 back to the last school day Ray is actually in.
 
 Everything else is home work — printing the Teaching Plan, working the sheet by
-hand, making the video, posting it, capturing in PowerSchool, and every build.
+hand, making the video, posting it, and every build.
 Those can land on a weekend, a holiday or a day Ray is out sick, and they do not
 compete for a prep block.
 
