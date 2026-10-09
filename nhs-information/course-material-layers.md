@@ -2,6 +2,18 @@
 
 A standing fact. Present tense. If it becomes wrong, edit this file.
 
+## Contents
+
+- The three layers
+- Where Class Development is
+- One exercise, three names
+- Engineering units
+- Who owns which layer
+- What "closed" means in a vault
+- Before calling something missing from a vault
+- Naming work by layer
+- Where this came from
+
 ## The three layers
 
 | Layer | Where | Answers |

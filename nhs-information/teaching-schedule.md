@@ -2,6 +2,31 @@
 
 A standing fact. Present tense. If it becomes wrong, edit this file.
 
+## Contents
+
+- Day types
+- Blocks
+- Hallway duty
+- Usable time
+- What costs a block and what does not
+- Self-paced classes
+- Grading
+- Email home for D students
+- Print prep — physics
+- Work it by hand
+- Complete the solutions before printing
+- What a lesson document creates
+- Home or school
+- Print prep — engineering and robotics
+- Course lengths
+- Sections
+- Student information
+- The physics packet is for planning only
+- Block 2 plays morning announcements
+- Red 3 takes first lunch on exam days
+- Where this came from
+- Why this file is here and not in Drive
+
 ## Day types
 
 School days alternate Red, Blue, Red, Blue. Holidays are skipped and the
