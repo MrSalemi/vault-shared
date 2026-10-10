@@ -559,6 +559,30 @@ async function main() {
           !/<w:pageBreakBefore\/>/.test(xml) && !/<w:br w:type="page"\/>/.test(xml));
   }
 
+  // --- A teacher grading line prints light grey --------------------------
+  // Physics marks each point on a lab with a grey note line that opens with
+  // the teacher mark and holds checkboxes. At the note's usual dark grey the
+  // students ticked them, so a line opening with the mark prints lighter.
+  // An ordinary note must not change: every other course uses notes.
+  console.log('\na teacher grading line prints light grey');
+  const wTG = scratchUnit();
+  const tgMd = path.join(wTG, 'tg.md');
+  fs.writeFileSync(tgMd, guide('> \u2615   \u2610  Equation\n\n> An ordinary note.', 'TG.docx'));
+  const rTG = build(wTG, tgMd);
+  check('builds', rTG.ok, rTG.err.trim());
+  if (rTG.ok) {
+    const {xml} = await textOf(path.join(wTG, 'TG.docx'));
+    const runsOf = word => (xml.match(/<w:r>[\s\S]*?<\/w:r>/g) || []).filter(r => r.includes(word));
+    const teacher = runsOf('Equation');
+    const plain = runsOf('ordinary');
+    check('the teacher line is light grey',
+          teacher.length > 0 && teacher.every(r => /w:color w:val="A6A6A6"/.test(r)),
+          teacher.join(' '));
+    check('an ordinary note keeps its dark grey',
+          plain.length > 0 && plain.every(r => /w:color w:val="595959"/.test(r)),
+          plain.join(' '));
+  }
+
   // --- A guide's letter may be either case -------------------------------
   // The glob was '[a-z][0-9][0-9].md' until 2026-09-07, so physics' lab guide
   // L18.md was not a guide as far as build-all.sh was concerned. The failure

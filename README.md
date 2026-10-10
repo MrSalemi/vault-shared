@@ -96,6 +96,7 @@ command line skips extras.
 | `# Heading` | part heading |
 | `## Heading` | section heading |
 | `> text` | grey italic note |
+| `> ☕💻 ☐ …` | a teacher grading line: a note that opens with ☕ prints light grey, so students leave its boxes alone (physics DECISIONS #94) |
 | `**whole paragraph**` | bold lead line |
 | `- item` / `1. item` | bullet / numbered list |
 | ` ``` ` fence | code block, monospace, boxed |

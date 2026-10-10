@@ -248,6 +248,13 @@ function imageBlock(spec, contentDir, o = {}) {
 // picture on purpose, and an empty cell has to stay empty rather than collapse.
 const TABLE_BORDER = "808080";
 
+// A note that opens with the teacher mark, coffee and laptop, is a grading
+// line: one checkbox per point, for the teacher to tick (physics DECISIONS
+// #80). At a note's usual dark grey, students ticked the boxes themselves, so
+// a teacher line prints light grey. Physics is the only course with the mark.
+const TEACHER_MARK = "\u2615";
+const TEACHER_GREY = "A6A6A6";
+
 // A mistake in the markdown rather than a crash in the builder. make.js prints
 // these as the file and the problem, with no stack trace.
 const guideError = msg => Object.assign(new Error(msg), {guideError: true});
@@ -390,7 +397,8 @@ function render(blocks, contentDir) {
                               alignment: ALIGN_BODY,
                               spacing: {after: 180, line: LINE}, ...brk}));
     } else if (kind === "note") {
-      out.push(new Paragraph({children: runs(payload, {italics: true, color: "595959"}),
+      const grey = payload.startsWith(TEACHER_MARK) ? TEACHER_GREY : "595959";
+      out.push(new Paragraph({children: runs(payload, {italics: true, color: grey}),
                               alignment: ALIGN_BODY,
                               spacing: {after: 180, line: LINE}, ...brk}));
     } else if (kind === "space") {
