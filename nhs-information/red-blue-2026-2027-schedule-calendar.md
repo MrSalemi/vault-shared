@@ -10,6 +10,14 @@
 - Physics Blue 2, Red 2, Red 3 — `physics/CALENDAR.md`
 - RoboNatick (after-school FTC program, not a course) — `robonatick/CALENDAR.md` (not in the source calendar; dates entered by hand)
 
+## Contents
+
+- Column legend (from row 1 of the source file)
+- Term boundaries
+- Early release (half) days
+- Non-cycle days (holidays, breaks, special days)
+- Day-by-day cycle calendar
+
 ## Column legend (from row 1 of the source file)
 
 | Column | Header |

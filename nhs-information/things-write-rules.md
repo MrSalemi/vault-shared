@@ -2,6 +2,27 @@
 
 A standing fact. Present tense. If it becomes wrong, edit this file.
 
+## Contents
+
+- When the MCP fails, read the log before guessing
+- The MCP is the only route
+- The MCP cannot delete
+- The three iron rules
+- What Claude may do
+- Someday is Ray's
+- Rows Ray cannot see
+- The daily-brief standing approval
+- The write test
+- Which Mac this session reads
+- An appointment is not a task
+- Naming a task for its layer
+- Dates mean something
+- Today holds only what must be done today
+- What a conflict is
+- The Sunday check
+- Why the rules exist
+- Where this came from
+
 ## When the MCP fails, read the log before guessing
 
 The `things` MCP server can fail in ways that look alike from here. Claude sees
@@ -12,6 +33,14 @@ That is not a diagnosis. The logs are:
 ~/Library/Logs/Claude/mcp-server-things.log     what Claude Desktop saw
 ~/.things-mcp/logs/                             what the server itself wrote
 ```
+
+### Things app is not ready
+
+Every read can succeed while `update_todo` fails with `Things app is not ready`.
+The MCP is up; the Things **app** is still launching. Wait about thirty seconds
+and try the write once more. Only a second failure means Things is unavailable
+for the run. Found 2026-09-20, which is why a run tests one write before it
+depends on writing (see "The write test").
 
 ### The AppleScript permission hang
 
@@ -138,8 +167,30 @@ Adding tasks to a project Ray created is fine. Renaming it or moving it is not.
   calendar moved under it.
 - Edit the notes on a task it created, and on any task whose notes it wrote,
   to correct reasoning that turned out wrong.
+- Cancel a task, but only under the rule below.
 
 That is the whole list. Everything not on it is Ray's.
+
+## Canceling a task
+
+The MCP can cancel a task (`update_todo` with `canceled`). It can also check
+one off (`completed`). Rule 2 still forbids checking off. Canceling is allowed
+only like this:
+
+- **Ray names the task in the same conversation and says to remove or cancel
+  it.** "Remove all the KDP tasks" names them. A task Claude thinks is dead is
+  not named.
+- **Never during `daily-brief`** or any other run under a standing approval.
+  The standing approval covers creating and re-dating, not removing.
+- **Every cancel is reported by title** in the reply, so Ray sees what left his
+  list.
+
+A canceled task is not deleted. It moves to the Logbook marked canceled, and
+Ray can bring it back from there.
+
+Recorded 2026-10-10, Ray. He chose this over never canceling and over letting
+Claude cancel on its own judgment, because he does not want tasks leaving
+Things by accident.
 
 When Claude cannot tell whether Ray or Claude wrote a task, it is Ray's. Ask,
 do not guess.
@@ -172,8 +223,8 @@ Ray could not find in Things. None were in the trash.
 
 The `daily-brief` skill writes without asking, every run. Ray runs it at his
 desk each morning and expects the list to be correct when it finishes. It
-creates tasks and moves dates on its own authority. It still never deletes and
-never completes.
+creates tasks and moves dates on its own authority. It still never deletes,
+never completes, and never cancels.
 
 This is the only standing approval. Every other thread shows Ray the proposed
 list first.
@@ -274,6 +325,49 @@ still be done without hurting, or drop its date if nothing hangs on it. Do not
 leave it sitting on Today as overdue.
 
 Recorded 2026-10-03, stated by Ray.
+
+## What a conflict is
+
+Two tasks on the same day is not a conflict. Neither is a full day, an evening
+appointment, or a deadline that is merely close. Do not name any of those.
+
+A conflict is one of these:
+
+- A hard deadline with no usable block left before it.
+- An appointment that eats the only block a dated task could have used.
+- Two jobs needing the same 80 minutes or the same room, where neither can move.
+
+When there is one, say what collides and which side has slack. Ray picks.
+
+Moved here from the `daily-brief` skill on 2026-10-09, to keep that skill under
+Anthropic's 500-line guideline.
+
+## The Sunday check
+
+Run by `daily-brief` on Sundays only. Read `get_anytime` and `get_projects` and
+build two lists.
+
+**Undated projects** — a project with no start date. A deadline does not count
+as a date (see "Dates mean something"); print the deadline beside the project
+when it has one, because those are the urgent entries. Skip:
+
+- Any project in Someday, and every `[Template] ...` project. Someday is Ray's.
+- Any project tagged `Repeating`. Things owns the date on those, not Ray.
+  Nothing else in the data tells a paused repeating project from a neglected
+  one, so an untagged repeater keeps appearing until Ray tags it.
+- Any project whose own tasks carry dates. An undated project running dated
+  work already has a mechanism. `Unit 01 Kinematics Exam` is the shape — no
+  start date on the project, thirty dated tasks inside it.
+
+The line to Ray is "date it or move it to Someday." Never do either for him.
+
+**Loose undated work** — a to-do with no start date, an area, and no project.
+An undated task inside a project is correct and is never flagged.
+
+Anything with neither a project nor an area is a hidden row Ray cannot see.
+Never name it (see "Rows Ray cannot see").
+
+Moved here from the `daily-brief` skill on 2026-10-09.
 
 ## Why the rules exist
 
