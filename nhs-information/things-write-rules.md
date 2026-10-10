@@ -167,8 +167,30 @@ Adding tasks to a project Ray created is fine. Renaming it or moving it is not.
   calendar moved under it.
 - Edit the notes on a task it created, and on any task whose notes it wrote,
   to correct reasoning that turned out wrong.
+- Cancel a task, but only under the rule below.
 
 That is the whole list. Everything not on it is Ray's.
+
+## Canceling a task
+
+The MCP can cancel a task (`update_todo` with `canceled`). It can also check
+one off (`completed`). Rule 2 still forbids checking off. Canceling is allowed
+only like this:
+
+- **Ray names the task in the same conversation and says to remove or cancel
+  it.** "Remove all the KDP tasks" names them. A task Claude thinks is dead is
+  not named.
+- **Never during `daily-brief`** or any other run under a standing approval.
+  The standing approval covers creating and re-dating, not removing.
+- **Every cancel is reported by title** in the reply, so Ray sees what left his
+  list.
+
+A canceled task is not deleted. It moves to the Logbook marked canceled, and
+Ray can bring it back from there.
+
+Recorded 2026-10-10, Ray. He chose this over never canceling and over letting
+Claude cancel on its own judgment, because he does not want tasks leaving
+Things by accident.
 
 When Claude cannot tell whether Ray or Claude wrote a task, it is Ray's. Ask,
 do not guess.
@@ -201,8 +223,8 @@ Ray could not find in Things. None were in the trash.
 
 The `daily-brief` skill writes without asking, every run. Ray runs it at his
 desk each morning and expects the list to be correct when it finishes. It
-creates tasks and moves dates on its own authority. It still never deletes and
-never completes.
+creates tasks and moves dates on its own authority. It still never deletes,
+never completes, and never cancels.
 
 This is the only standing approval. Every other thread shows Ray the proposed
 list first.
