@@ -305,6 +305,26 @@ async function main() {
     check(`${name} names the file`, /g\.md/.test(rB.err), rB.err.trim());
   }
 
+  // --- Every numbered list starts at 1 ----------------------------------
+  // All lists shared one numbering instance, so a guide's second list carried
+  // on from its first: Engineering P04 printed its Step 11 list as 6 to 9.
+  console.log('\nEach numbered list counts from 1');
+  const wN = scratchUnit();
+  const srcN = path.join(wN, 'g.md');
+  fs.writeFileSync(srcN, guide(
+    '1. First list, one.\n2. First list, two.\n\nA paragraph between.\n\n' +
+    '1. Second list, one.\n2. Second list, two.\n'
+  ));
+  const rN = build(wN, srcN);
+  check('builds', rN.ok, rN.err.trim());
+  if (rN.ok) {
+    const {xml} = await textOf(path.join(wN, 'Test.docx'));
+    const ids = [...xml.matchAll(/<w:numId w:val="(\d+)"\/>/g)].map(m => m[1]);
+    check('four numbered items', ids.length === 4, ids.join(','));
+    check('one list keeps one number sequence', ids[0] === ids[1] && ids[2] === ids[3], ids.join(','));
+    check('the second list is a new sequence', ids[1] !== ids[2], ids.join(','));
+  }
+
   // --- Math survives where text already works ----------------------------
   // Equations turn up inside worksheet problems, which are numbered lists and
   // table cells as often as paragraphs.

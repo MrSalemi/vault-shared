@@ -150,9 +150,13 @@ function bulletP(text) {
                         alignment: ALIGN_BODY,
                         spacing: {after: 80, line: LINE}});
 }
-function numP(text) {
+// Every numbered list counts from 1. Each list gets its own numbering instance;
+// with one shared instance, a second list in a guide carried on from the first
+// and printed 7, 8, 9 where the student should read 1, 2, 3.
+let numberedLists = 0;
+function numP(text, instance) {
   return new Paragraph({children: runs(text),
-                        numbering: {reference: "gn", level: 0},
+                        numbering: {reference: "gn", level: 0, instance},
                         alignment: ALIGN_BODY,
                         spacing: {after: 80, line: LINE}});
 }
@@ -422,7 +426,8 @@ function render(blocks, contentDir) {
       payload.forEach(t => out.push(bulletP(t)));
       out.push(new Paragraph({children: [], spacing: {after: 60}}));
     } else if (kind === "n") {
-      payload.forEach(t => out.push(numP(t)));
+      const list = ++numberedLists;
+      payload.forEach(t => out.push(numP(t, list)));
       out.push(new Paragraph({children: [], spacing: {after: 60}}));
     } else if (kind === "image") {
       out.push(imageBlock(payload, contentDir,
