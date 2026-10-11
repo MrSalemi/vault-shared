@@ -239,6 +239,14 @@ Do not use `notes` for this. A task with no notes has nothing to set it back to,
 and an empty `notes` value cannot be sent — the call fails before it reaches
 Things. Found 2026-09-21.
 
+**Pick the task from a `get_today` call made in the same run, and only after
+that call returns.** Never reuse a task id from an earlier run or from memory,
+and never fire the write test in parallel with the read. A task Ray has checked
+off since then is no longer open, and setting `when` on it appears to reopen
+it. On 2026-10-11 a write test aimed at a remembered id left "Grade the 2.3
+lab — Red 2" open after Ray had checked it off, and he had to check it off
+again.
+
 ## Which Mac this session reads
 
 A Cowork session reads Things on whichever Mac it is linked to — usually the home
