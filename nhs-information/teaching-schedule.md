@@ -73,10 +73,9 @@ needing room 200F has to be a block that reaches it.
 Only three things cost a whole 80-minute block: grading one physics section's
 exam, grading one physics section's lab, and a build job.
 
-Everything else on the task list is minutes. Entering PowerSchool zeros,
-printing, sending an email, a phone call, a file fix — none of these occupy a
-block, and none of them compete with a build for prep time. A day whose only
-other task is "Put P03 zeros into PowerSchool" is a day with its block free.
+Everything else on the task list is minutes. Printing, sending an email, a
+phone call, a file fix — none of these occupy a block, and none of them
+compete with a build for prep time.
 
 Never add up task counts to call a day full. Count blocks, and count only the
 three things above.
@@ -93,10 +92,9 @@ Robotics and Engineering generate no grading work outside class. Ray marks
 the projects done in the room and enters them in PowerSchool there. He never
 carries that work away with him.
 
-The one task a project due date does create is closing it out: entering
-zeros in PowerSchool for the students who did not finish. Phrase it as
-"Put P01 zeros into PowerSchool", naming the project. It follows the due
-date; it is not grading, and it takes a few minutes.
+**A project due date creates no task.** There is no "Put P01 zeros into
+PowerSchool" task. Ray enters zeros for unfinished students on his own. He
+deleted every one that was made and dropped the rule on 2026-10-12.
 
 Physics grading is not only exams. A lab also creates a grading task, at
 the same cost as an exam. Grading one section — exam or lab — takes at
