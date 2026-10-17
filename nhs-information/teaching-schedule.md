@@ -70,15 +70,16 @@ needing room 200F has to be a block that reaches it.
 
 ## What costs a block and what does not
 
-Only two things cost a whole 80-minute block: grading one physics section's
-lab, and a build job. Exam grading is minutes, not a block; see "Grading".
+Three things cost block time: grading one physics section's lab (a whole
+block), a build job (a whole block), and exam grading (about 2 minutes per
+test; see "Grading").
 
 Everything else on the task list is minutes. Printing, sending an email, a
 phone call, a file fix — none of these occupy a block, and none of them
 compete with a build for prep time.
 
 Never add up task counts to call a day full. Count blocks, and count only the
-two things above.
+three things above.
 
 ## Self-paced classes
 
@@ -98,9 +99,11 @@ deleted every one that was made and dropped the rule on 2026-10-12.
 
 Physics grading is not only exams. A lab also creates a grading task.
 
-**Grading one section's exam takes about 15 minutes** — no more than one
-minute per test (Ray, 2026-10-17). It is minutes, not a block. All three
-sections fit in one sitting, and exam grading never makes a day full.
+**Grading takes about 2 minutes per student test** (Ray, timed 2026-10-17).
+A section's time is its student count times 2 minutes; the Akindi roster has
+the counts. All 43 students take about 90 minutes, a little over one block.
+A section is about 30 minutes, so two sections fit in one block. Never put
+all three sections on a Red day, which has one block.
 
 Grading one section's lab takes at least 80 minutes, one full block.
 
