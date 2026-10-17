@@ -70,15 +70,15 @@ needing room 200F has to be a block that reaches it.
 
 ## What costs a block and what does not
 
-Only three things cost a whole 80-minute block: grading one physics section's
-exam, grading one physics section's lab, and a build job.
+Only two things cost a whole 80-minute block: grading one physics section's
+lab, and a build job. Exam grading is minutes, not a block; see "Grading".
 
 Everything else on the task list is minutes. Printing, sending an email, a
 phone call, a file fix — none of these occupy a block, and none of them
 compete with a build for prep time.
 
 Never add up task counts to call a day full. Count blocks, and count only the
-three things above.
+two things above.
 
 ## Self-paced classes
 
@@ -96,10 +96,13 @@ carries that work away with him.
 PowerSchool" task. Ray enters zeros for unfinished students on his own. He
 deleted every one that was made and dropped the rule on 2026-10-12.
 
-Physics grading is not only exams. A lab also creates a grading task, at
-the same cost as an exam. Grading one section — exam or lab — takes at
-least 80 minutes, one full block. Three physics sections needing grading
-means three blocks. A Blue day can absorb two; a Red day can absorb one.
+Physics grading is not only exams. A lab also creates a grading task.
+
+**Grading one section's exam takes about 15 minutes** — no more than one
+minute per test (Ray, 2026-10-17). It is minutes, not a block. All three
+sections fit in one sitting, and exam grading never makes a day full.
+
+Grading one section's lab takes at least 80 minutes, one full block.
 
 **Grading and PowerSchool happen at the same time.** Ray enters grades in
 PowerSchool as he grades. There is no separate "Update PowerSchool" task after

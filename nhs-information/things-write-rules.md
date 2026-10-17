@@ -234,6 +234,9 @@ list first.
 `daily-brief` and `physics-lesson-tasks` prove Things accepts writes before they
 depend on it. **Use `update_todo` with `when` set to the task's current start
 date.** Nothing changes, and every task in `get_today` has a start date.
+Pick a task whose start date is today or later. A past start date appears to be
+reset to today by the write: on 2026-10-16 the test moved an overdue task from
+10/14 to 10/16. `get_today` lists overdue tasks too, so check the date first.
 
 Do not use `notes` for this. A task with no notes has nothing to set it back to,
 and an empty `notes` value cannot be sent — the call fails before it reaches
