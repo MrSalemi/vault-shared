@@ -49,7 +49,8 @@ A guide is only rebuilt when its markdown, one of its pictures, or the builder
 itself is newer than the PDF. Page counts are measured by running the file
 through LibreOffice, which is slow, so this is the difference between a minute
 and a second. Odd page counts are padded to even, because printing is
-double-sided.
+double-sided — except a one-page guide, which stays one page. Never make two
+sheets of paper for a single sheet.
 
 Needs `node`, `soffice` (LibreOffice) and `pdftoppm` (Poppler) on `PATH`, the
 **Carlito** font installed, and `npm install` run once in `shared/`.

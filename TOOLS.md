@@ -128,6 +128,8 @@ filename. What it does, in order:
 5. Builds a `.docx` in a temp folder via `make.js`, converts it with LibreOffice,
    counts the pages, and pads odd counts to even by rebuilding with `PAD_EVEN=1`.
    Printing is double-sided; an odd guide would put the next one on its back.
+   **A one-page guide is never padded.** It is one sheet, and a blank second
+   page printed single-sided doubles the paper: 250 sheets on 2026-10-19.
 6. Deletes the `.docx`. There is never an editable copy of a guide anywhere.
 7. Handles `extras.txt` — files that ship with the guides but are not guides.
    Naming a single guide on the command line skips extras deliberately.

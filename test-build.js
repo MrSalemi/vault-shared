@@ -443,6 +443,29 @@ async function main() {
     check('every part but the clock is identical', differ.length === 0, differ.join(', '));
   }
 
+  // --- A one-page guide is not padded to two -----------------------------
+  // build-all.sh pads an odd page count to even for double-sided printing.
+  // A single page is the exception: padded, it prints as two sheets
+  // single-sided, and on 2026-10-19 that wasted 250 sheets of paper.
+  console.log('\na one-page guide stays one page');
+  if (!HAS_SOFFICE) {
+    skip('a one-page guide is not padded', 'no soffice');
+  } else {
+    const wOne = scratch();
+    fs.writeFileSync(path.join(wOne, 'course.js'), "module.exports = () => ({});\n");
+    fs.writeFileSync(path.join(wOne, 'z02.md'), guide('One short paragraph.', 'One.docx'));
+    let one;
+    try {
+      one = {ok: true, out: execFileSync(path.join(__dirname, 'build-all.sh'), ['z02.md'],
+             {cwd: wOne, stdio: 'pipe', env: {...process.env, GUIDES: '', CLASS_DEV_DIR: ''}}).toString()};
+    } catch (e) {
+      one = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+    check('it builds', one.ok, one.out.trim());
+    check('it is one page', /One\.pdf\s+1 pages/.test(one.out), one.out.trim());
+    check('it is not padded', !/padded/.test(one.out), one.out.trim());
+  }
+
   // --- build-all.sh only needs the deploy folder on a -d run --------------
   // It used to resolve deploy.txt before it had even read the arguments, so a
   // machine with no Drive mounted could not build a guide at all.

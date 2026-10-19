@@ -317,7 +317,13 @@ for md in "${FILES[@]}"; do
 
         # An odd guide is rebuilt with a blank page, so its first PDF is stale
         # and has to be made again. An even one is already right.
-        if [ $((pages % 2)) -ne 0 ]; then
+        #
+        # A one-page guide is never padded. It prints on one side of one sheet,
+        # and a blank second page doubles the paper for nothing: a padded
+        # one-page answer sheet printed single-sided cost Ray 250 sheets on
+        # 2026-10-19. Padding is only for guides that are printed double-sided
+        # because they already run past one page.
+        if [ "$pages" -gt 1 ] && [ $((pages % 2)) -ne 0 ]; then
             rm -f "$WORK/$pdf"
             ( cd "$WORK" && PAD_EVEN=1 node "$BUILDER/make.js" "$HERE/$md" > /dev/null \
                 && soffice --headless --convert-to pdf "$out" > /dev/null 2>&1 )

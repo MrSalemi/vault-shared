@@ -260,6 +260,12 @@ Two pages at most, with the table at the top of page one. Every step goes in
 for all three sections, morning announcements included; Ray skips what does not
 apply. Exam, review and lab days get the same plan.
 
+**A review day's plan has a Moodle step early in the period**, right after
+attendance and announcements, before the review work: students work in Moodle
+for a while. Ray, 2026-10-13: "From now on when we do a review day lesson plan,
+it should explicitly include a time earlier in the class to do Moodle for a
+while."
+
 **Link every material the plan names.** The link opens the source in Obsidian
 and prints as its label, so the PDF reads the same. A link to another guide
 needs a label or the build stops: `[[w0204|W0204]]`. Inside the steps table the
