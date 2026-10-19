@@ -493,6 +493,11 @@ git push                          # the hook runs preflight and can refuse
 
 ## 6. Things that have bitten, in one list
 
+- A page-number field with no result inside it is printed by LibreOffice in the
+  formatting of the document's last run, not its own: 4 pt after a writing box,
+  pale grey italic after "This page left blank." `build.js` splits each footer
+  field into its five runs with a placeholder result (`fixPageFields`). Check a
+  footer with `pdftotext -bbox`, not by reading the `.docx`.
 - A font named in the source is a request, not a guarantee. `pdffonts` is the
   only honest answer to what rendered.
 - Page-count drift between two machines is a *symptom*. Something substituted.

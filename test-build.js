@@ -656,6 +656,14 @@ async function main() {
     check('the page number is black, not grey',
           fields.length > 0 && fields.every(r => /w:color w:val="000000"/.test(r)),
           fields.join(' '));
+    // The real failure: a field with no result inside it is printed by
+    // LibreOffice in the formatting of the document's LAST run, not its own.
+    // So each field must carry a result run with the field's formatting.
+    const results = [...fxml.matchAll(
+      /<w:fldChar w:fldCharType="separate"\/><\/w:r><w:r><w:rPr>((?:(?!<\/w:rPr>).)*)<\/w:rPr><w:t[^>]*>\d+<\/w:t><\/w:r>/g)];
+    check('each page field holds a result run in its own large type',
+          results.length >= 2 && results.every(m => sizeOf(m[1]) >= 22 && /<w:b\/>/.test(m[1])),
+          fxml.slice(fxml.indexOf('PAGE') - 300, fxml.indexOf('PAGE') + 600));
     check('the label beside it stays small and grey',
           label.length > 0 && label.every(r => sizeOf(r) < 22 && /w:color w:val="595959"/.test(r)),
           label.join(' '));

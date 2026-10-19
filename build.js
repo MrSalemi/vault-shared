@@ -495,6 +495,38 @@ function makeFooter(label) {
   })]});
 }
 
+// LibreOffice ignores the formatting of a page-number field that has no result
+// inside it, which is how docx writes one: begin, PAGE, separate, end, all in a
+// single run. It then prints the digits in whatever the document's last run
+// looks like -- 4 pt after a writing box, 9 pt pale grey italic after "This
+// page left blank." That is why the page numbers vanished on scans. Each field
+// is split into its five runs, every one carrying the run's own formatting,
+// with a "1" as the result. LibreOffice and Word replace the 1 with the real
+// number; the formatting is what they keep (2026-10-19).
+const FIELD_RUN = new RegExp(
+  '<w:r><w:rPr>((?:(?!</w:rPr>).)*)</w:rPr>' +
+  '<w:fldChar w:fldCharType="begin"/>' +
+  '<w:instrText xml:space="preserve">(PAGE|NUMPAGES)</w:instrText>' +
+  '<w:fldChar w:fldCharType="separate"/><w:fldChar w:fldCharType="end"/></w:r>', 'g');
+
+async function fixPageFields(buf) {
+  const JSZip = require('jszip');
+  const zip = await JSZip.loadAsync(buf);
+  for (const name of Object.keys(zip.files)) {
+    if (!/^word\/footer\d*\.xml$/.test(name)) continue;
+    const xml = await zip.file(name).async('string');
+    zip.file(name, xml.replace(FIELD_RUN, (_, rPr, ins) => {
+      const run = body => `<w:r><w:rPr>${rPr}</w:rPr>${body}</w:r>`;
+      return run('<w:fldChar w:fldCharType="begin"/>') +
+             run(`<w:instrText xml:space="preserve"> ${ins} </w:instrText>`) +
+             run('<w:fldChar w:fldCharType="separate"/>') +
+             run('<w:t>1</w:t>') +
+             run('<w:fldChar w:fldCharType="end"/>');
+    }));
+  }
+  return zip.generateAsync({type: 'nodebuffer', compression: 'DEFLATE'});
+}
+
 // contentDir is the folder the guide's markdown lives in, and it is where its
 // pictures are looked up. It is passed in rather than inferred, because the
 // builder must not assume it sits beside the guides -- see imageBlock.
@@ -542,7 +574,7 @@ async function build(outPath, ver, blocks, contentDir) {
       children: [...render(blocks, contentDir), ...pad],
     }],
   });
-  fs.writeFileSync(outPath, await Packer.toBuffer(doc));
+  fs.writeFileSync(outPath, await fixPageFields(await Packer.toBuffer(doc)));
   console.log("wrote", outPath, ver);
 }
 
