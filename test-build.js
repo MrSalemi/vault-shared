@@ -626,6 +626,41 @@ async function main() {
           plain.join(' '));
   }
 
+  // --- The page number is big enough to read on a scan -------------------
+  // It printed at the footer label's 8.5 pt grey, and on a scanned key the
+  // digits were gone. The page number is now large, bold and black; the label
+  // beside it stays small and grey. Checked on the field runs themselves, since
+  // those are what print the digits.
+  console.log('\nthe page number is large, bold and black');
+  const wPN = scratchUnit();
+  const pnMd = path.join(wPN, 'pn.md');
+  fs.writeFileSync(pnMd, guide('One line.', 'PN.docx'));
+  const rPN = build(wPN, pnMd);
+  check('builds', rPN.ok, rPN.err.trim());
+  if (rPN.ok) {
+    const zip = await JSZip.loadAsync(fs.readFileSync(path.join(wPN, 'PN.docx')));
+    const names = Object.keys(zip.files).filter(n => /^word\/footer\d*\.xml$/.test(n));
+    let fxml = '';
+    for (const n of names) fxml += await zip.file(n).async('string');
+    const runs = fxml.match(/<w:r>[\s\S]*?<\/w:r>/g) || [];
+    const fields = runs.filter(r => /<w:instrText[^>]*>\s*(PAGE|NUMPAGES)\b/.test(r));
+    const sizeOf = r => Number((r.match(/<w:sz w:val="(\d+)"/) || [])[1] || 0);
+    const label = runs.filter(r => r.includes('Test guide'));
+    check('the footer carries both page fields', fields.length >= 2, fxml.slice(0, 400));
+    check('the page number is at least 11 pt',
+          fields.length > 0 && fields.every(r => sizeOf(r) >= 22),
+          fields.join(' '));
+    check('the page number is bold',
+          fields.length > 0 && fields.every(r => /<w:b\/>/.test(r)),
+          fields.join(' '));
+    check('the page number is black, not grey',
+          fields.length > 0 && fields.every(r => /w:color w:val="000000"/.test(r)),
+          fields.join(' '));
+    check('the label beside it stays small and grey',
+          label.length > 0 && label.every(r => sizeOf(r) < 22 && /w:color w:val="595959"/.test(r)),
+          label.join(' '));
+  }
+
   // --- A guide's letter may be either case -------------------------------
   // The glob was '[a-z][0-9][0-9].md' until 2026-09-07, so physics' lab guide
   // L18.md was not a guide as far as build-all.sh was concerned. The failure

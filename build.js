@@ -462,6 +462,12 @@ function render(blocks, contentDir) {
 // so a trailing stamp is a duplicate -- and a lone paragraph at the end of a
 // full page pushes the guide onto a whole extra sheet.
 
+// The page number is printed large, bold and black. At the label's 8.5 pt grey
+// it vanished on a scan, and a scanned key or a stack of loose pages has to be
+// put back in order by it (2026-10-19). The label stays small: it is read once.
+const PAGE_TEXT = {size: 22, color: "000000"};
+const PAGE_NUM = {size: 22, color: "000000", bold: true};
+
 function makeFooter(label) {
   const half = PAGE_W / 2;
   const none = {style: BorderStyle.NONE, size: 0, color: "FFFFFF"};
@@ -480,10 +486,10 @@ function makeFooter(label) {
     rows: [new TableRow({children: [
       cellOf([new TextRun({text: label, size: 17, color: "595959"})],
              AlignmentType.LEFT),
-      cellOf([new TextRun({text: "Page ", size: 17, color: "595959"}),
-              new TextRun({children: [PageNumber.CURRENT], size: 17, color: "595959"}),
-              new TextRun({text: " of ", size: 17, color: "595959"}),
-              new TextRun({children: [PageNumber.TOTAL_PAGES], size: 17, color: "595959"})],
+      cellOf([new TextRun({text: "Page ", ...PAGE_TEXT}),
+              new TextRun({children: [PageNumber.CURRENT], ...PAGE_NUM}),
+              new TextRun({text: " of ", ...PAGE_TEXT}),
+              new TextRun({children: [PageNumber.TOTAL_PAGES], ...PAGE_NUM})],
              AlignmentType.RIGHT),
     ]})],
   })]});
