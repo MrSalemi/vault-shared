@@ -1,0 +1,860 @@
+// Tests for the guide builder. No robot, no Word, no network.
+// V03
+//
+//   cd guides/unit01 && node ../../shared/test-build.js
+//   node test-build.js <folder holding the guides>
+//
+// Exits non-zero on the first failure, so it can gate a commit.
+//
+// The builder repo holds no guides, so the tests are pointed at a course's
+// guides folder -- the current directory unless one is named. Everything is
+// built in a temp folder, so running this never touches a real .docx.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const {execFileSync} = require('child_process');
+const JSZip = require('jszip');
+
+const MAKE = path.join(__dirname, 'make.js');
+const GUIDES = path.resolve(process.argv[2] || process.cwd());
+
+// A guide's name is a letter and two digits, and the letter may be either case
+// -- see build-all.sh's GLOB. This has to agree with it, or the suite quietly
+// stops testing whichever guides the script would have built.
+const GUIDE_NAME = /^[A-Za-z]\d+\.md$/;
+
+if (!fs.readdirSync(GUIDES).some(f => GUIDE_NAME.test(f))) {
+  console.error(`no guides in ${GUIDES}`);
+  console.error('run this from a unit folder, or name one:');
+  console.error('  cd guides/unit01 && node ../../shared/test-build.js');
+  process.exit(1);
+}
+
+let failures = 0;
+let skipped = 0;
+function check(name, ok, detail) {
+  console.log((ok ? '  PASS  ' : '  FAIL  ') + name);
+  if (!ok) {
+    failures++;
+    if (detail) console.log('        ' + detail);
+  }
+}
+
+// Most of this file builds .docx only, which needs nothing but node. A few
+// checks need a real PDF, which needs LibreOffice. CI deliberately does not
+// install it -- the run stays fast and needs no extra runner setup -- so those
+// checks announce themselves as skipped rather than failing. A skip is loud on
+// purpose: a check that quietly vanishes is worse than one that fails.
+function skip(name, why) {
+  console.log('  SKIP  ' + name + '  (' + why + ')');
+  skipped++;
+}
+
+// NO_SOFFICE=1 pretends LibreOffice is absent even where it is installed. That
+// is how a machine with LibreOffice reproduces the CI runner, which has none —
+// run both ways before pushing and you cannot be surprised by the Action.
+const HAS_SOFFICE = process.env.NO_SOFFICE === '1' ? false : (() => {
+  const dirs = (process.env.PATH || '').split(path.delimiter);
+  if (dirs.some(d => d && fs.existsSync(path.join(d, 'soffice')))) return true;
+  // The macOS installer does not put soffice on PATH; build-all.sh looks here
+  // too, so the test must agree with it about what "available" means.
+  return fs.existsSync('/Applications/LibreOffice.app/Contents/MacOS/soffice');
+})();
+
+// Run make.js with the temp folder as the working directory, so the .docx it
+// writes lands there. Pictures and sibling guides resolve against the folder
+// the markdown is in, so a synthetic test needs a folder that looks like a unit
+// -- see scratchUnit().
+function build(work, mdPath) {
+  try {
+    execFileSync('node', [MAKE, mdPath], {cwd: work, stdio: 'pipe'});
+    return {ok: true, err: ''};
+  } catch (e) {
+    return {ok: false, err: (e.stderr || '').toString() + (e.stdout || '').toString()};
+  }
+}
+
+// The visible words of a .docx, in order, with no markup.
+async function textOf(docxPath) {
+  const zip = await JSZip.loadAsync(fs.readFileSync(docxPath));
+  const xml = await zip.file('word/document.xml').async('string');
+  return {
+    text: [...xml.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m => m[1]).join(''),
+    xml,
+  };
+}
+
+function scratch() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'guide-test-'));
+}
+
+// A scratch folder that looks enough like a unit to exercise the rules that
+// depend on one: empty sibling guides, so a bare [[e03]] is recognised as a
+// link to a guide, and one real picture to embed. Borrowed from GUIDES rather
+// than kept here, because this repo owns no pictures.
+function scratchUnit() {
+  const w = scratch();
+  for (const name of ['e01', 'e02', 'e03']) {
+    fs.writeFileSync(path.join(w, name + '.md'), '');
+  }
+  // Every guides folder must have one; the builder refuses to guess the text.
+  fs.writeFileSync(path.join(w, 'course.js'),
+                   "module.exports = () => ({});\n");
+  const from = path.join(GUIDES, 'images');
+  const png = fs.existsSync(from) && fs.readdirSync(from).find(f => f.endsWith('.png'));
+  if (png) {
+    fs.mkdirSync(path.join(w, 'images'), {recursive: true});
+    fs.copyFileSync(path.join(from, png), path.join(w, 'images', 'test_pic.png'));
+  }
+  return w;
+}
+
+function guide(body, out = 'Test.docx') {
+  return `---
+out: ${out}
+version: V01
+title: "Test guide"
+number: "99"
+scaffold: test.py
+---
+
+${body}
+`;
+}
+
+async function main() {
+  // --- Every real guide still builds ------------------------------------
+  console.log('Every guide builds');
+  const work = scratch();
+  for (const md of fs.readdirSync(GUIDES).filter(f => GUIDE_NAME.test(f)).sort()) {
+    const r = build(work, path.join(GUIDES, md));
+    check(md, r.ok, r.err.trim());
+  }
+
+  // --- A link prints as its label ---------------------------------------
+  console.log('\nLinks print as their label, never as a target');
+  const w2 = scratchUnit();
+  const src = path.join(w2, 'g.md');
+  fs.writeFileSync(src, guide(
+    'You built this in [LED Circuit](e01.md) and again in [[e02|LED Circuit with Switch]].\n\n' +
+    'The literal syntax `[[e03]]` must survive inside backticks.\n\n' +
+    '![[test_pic.png]]'
+  ));
+  const r2 = build(w2, src);
+  check('builds', r2.ok, r2.err.trim());
+  if (r2.ok) {
+    const {text, xml} = await textOf(path.join(w2, 'Test.docx'));
+    check('markdown link shows its label', text.includes('built this in LED Circuit'));
+    check('wikilink alias shows its label', text.includes('again in LED Circuit with Switch'));
+    check('no link target reaches the page', !/\]\(|\[\[e02/.test(text), text.slice(0, 200));
+    check('link syntax inside backticks is left alone', text.includes('[[e03]]'));
+    check("an Obsidian image embed resolves to the guide's images/", /r:embed|<a:blip/.test(xml));
+  }
+
+  // --- A sized image in a table cell is one cell, not two ---------------
+  // Obsidian writes ![[thing|155]] for a sized embed, and escapes the `|` as
+  // `\|` when that sits inside a table cell -- e.g. ![[thing\|155]] -- so the
+  // row's own `|` delimiters aren't confused with it. A naive split on every
+  // `|` tears that one cell into two, and the picture never renders.
+  console.log('\nA sized image in a table cell is one cell, not two');
+  const w8 = scratchUnit();
+  const src8 = path.join(w8, 'g.md');
+  fs.writeFileSync(src8, guide(
+    '| Part | Picture |\n' +
+    '| --- | --- |\n' +
+    '| Widget | ![[test_pic.png\\|155]] |\n'
+  ));
+  const r8 = build(w8, src8);
+  check('builds', r8.ok, r8.err.trim());
+  if (r8.ok) {
+    const {text, xml} = await textOf(path.join(w8, 'Test.docx'));
+    check('the image embeds instead of printing as text', /r:embed|<a:blip/.test(xml));
+    check('no leftover wikilink syntax reaches the page',
+          !/\[\[|\]\]|155/.test(text), text.slice(0, 200));
+    check('the row is still two cells, not three',
+          text.includes('Widget') && !text.includes('WidgetPicture'));
+  }
+
+  // --- Print readability: 12pt, open spacing, ragged right ---------------
+  // Guides are printed and read on paper, some of them by dyslexic students.
+  // The standard print guidance asks for 12pt or larger, line spacing well
+  // above single, and left-aligned rather than justified text. All three are
+  // cheap and all three are easy to lose in a later edit, which is why they are
+  // pinned here rather than left to a default: Word's own default alignment is
+  // left, so a justified guide would come from a style someone added, and
+  // nothing would fail.
+  //
+  // The spacing check is a floor, not an exact value. Ray compared rendered
+  // pages at 1.2, 1.3 and 1.5 on 2026-08-29 and settled on 1.2, and the number
+  // may move again. What must not happen is a guide quietly going back to
+  // single spacing, so the test guards the decision rather than the digit.
+  console.log('\nBody text is 12pt, open-spaced, and left-aligned');
+  const w9 = scratchUnit();
+  const src9 = path.join(w9, 'g.md');
+  fs.writeFileSync(src9, guide(
+    'A paragraph long enough to wrap across more than one printed line, so ' +
+    'that its alignment and its line spacing are both visible on the page.\n\n' +
+    '- A bullet that also wraps, for the same reason as the paragraph above.\n'
+  ));
+  const r9 = build(w9, src9);
+  check('builds', r9.ok, r9.err.trim());
+  if (r9.ok) {
+    const {xml} = await textOf(path.join(w9, 'Test.docx'));
+    check('body runs are 12pt', /<w:sz w:val="24"\/>/.test(xml));
+    const lineVal = Number((xml.match(/w:line="(\d+)"/) || [])[1]);
+    check('line spacing is comfortably above single',
+          lineVal >= 276, `w:line="${lineVal}" (240 is single)`);
+    check('paragraphs say left, explicitly',
+          /<w:jc w:val="left"\/>/.test(xml));
+    check('nothing on the page is justified',
+          !/w:val="both"|w:val="distribute"/.test(xml));
+  }
+
+  // --- $math$ becomes a real Word equation -------------------------------
+  // Physics guides carry 209 equations across the year, and every one of them
+  // is a fraction, a subscript, a superscript, both scripts at once, or a
+  // square root. Flattening those to text loses meaning rather than looks:
+  // "a = (v_f - v_i)/Δt" written flat reads "aaverage=∆v∆t", which is not the
+  // same equation. So the builder emits Word's own math, which LibreOffice
+  // then draws properly in the PDF.
+  //
+  // The check is on the math XML, not the visible text: <m:f> is a fraction,
+  // <m:sSub> a subscript, and so on. Word puts equation characters in <m:t>
+  // rather than <w:t>, so textOf's plain text deliberately does not see them.
+  console.log('\n$math$ becomes a real Word equation');
+  const wM = scratchUnit();
+  const srcM = path.join(wM, 'g.md');
+  fs.writeFileSync(srcM, guide(
+    'Acceleration is $a = \\frac{v_f - v_i}{\\Delta t}$ in every case.\n\n' +
+    'Units are $m/s^2$, charge is $q_1^2$, and time is $\\sqrt{\\frac{2d}{a}}$.\n'
+  ));
+  const rM = build(wM, srcM);
+  check('builds', rM.ok, rM.err.trim());
+  if (rM.ok) {
+    const {text, xml} = await textOf(path.join(wM, 'Test.docx'));
+    check('a fraction is a fraction', /<m:f>/.test(xml));
+    check('a subscript is a subscript', /<m:sSub>/.test(xml));
+    check('a superscript is a superscript', /<m:sSup>/.test(xml));
+    check('sub and super together are one object', /<m:sSubSup>/.test(xml));
+    check('a root is a root', /<m:rad>/.test(xml));
+    check('the surrounding sentence still prints',
+          text.includes('Acceleration is') && text.includes('in every case.'));
+    check('no LaTeX source reaches the page',
+          !/\\frac|\\sqrt|\\Delta|\$/.test(text), text.slice(0, 200));
+  }
+
+  // --- A dollar sign is still a dollar sign ------------------------------
+  // The one way this feature could damage a guide that never asked for it:
+  // two prices in a sentence looking like a pair of math delimiters. Both
+  // delimiters must sit against non-space, so "a $20 and $30 item" is money.
+  // Engineering and Robotics guides are full of ordinary prose and must not
+  // change because Physics wanted equations.
+  console.log('\nOrdinary dollar signs are left alone');
+  const wD = scratchUnit();
+  const srcD = path.join(wD, 'g.md');
+  fs.writeFileSync(srcD, guide(
+    'The kit costs $20 and the spare costs $30, so budget $50.\n\n' +
+    // A hyphenated price range is the nastiest case: "$20-$" has a non-space
+    // at both ends, so only the "no digit after the closing $" rule saves it.
+    'Budget $20-$30 for the parts, or $5-$8 each.\n\n' +
+    'A lone $ is just a dollar sign.\n\n' +
+    'Backticks protect it: `$5 each`.\n\n' +
+    'An escaped \\$ prints as one too.\n'
+  ));
+  const rD = build(wD, srcD);
+  check('builds', rD.ok, rD.err.trim());
+  if (rD.ok) {
+    const {text, xml} = await textOf(path.join(wD, 'Test.docx'));
+    check('two prices in a sentence stay text', text.includes('$20 and the spare costs $30'));
+    check('a hyphenated price range stays text',
+          text.includes('$20-$30') && text.includes('$5-$8'), text.slice(0, 300));
+    check('a lone dollar sign survives', text.includes('A lone $ is just'));
+    check('a dollar in backticks survives', text.includes('$5 each'));
+    check('an escaped dollar loses its backslash', text.includes('An escaped $ prints'));
+    check('nothing here became an equation', !/<m:oMath/.test(xml));
+  }
+
+  // --- Bad math fails the build, loudly ----------------------------------
+  // One rule with several faces: anything outside the five supported
+  // constructs, and anything malformed, must stop the build and say why. The
+  // alternative is a wrong equation printed on a handout, which nobody
+  // catches until a student is looking at it.
+  console.log('\nUnsupported or malformed math fails the build');
+  const bad = [
+    ['an unsupported command', '$\\int x$',        /\\int is not supported/],
+    ['an unknown command',     '$\\wibble{x}$',    /\\wibble is not supported/],
+    ['a missing closing brace','$\\frac{a}{b$',    /missing '}'/],
+    ['too few arguments',      '$\\frac{a} + 1$',  /\\frac needs a \{\.\.\.\} argument/],
+    ['an empty argument',      '$\\sqrt{}$',       /empty \{\} argument/],
+    ['a script with nothing after it', '$x^$',     /with nothing after it/],
+    ['two subscripts on one thing',    '$x_a_b$',  /two subscripts/],
+    // Legal LaTeX, refused on purpose: Word draws an empty base as nothing,
+    // LibreOffice draws a small empty box, and the PDF is what a student
+    // holds. Only looking at the PDF caught this.
+    ['a script with no base',   'at 9.8 m/s$^2$ here', /Put the whole thing in the math/],
+    ['math in a heading',      '## Find $x^2$',    /not supported in a heading/],
+  ];
+  for (const [name, body, wanted] of bad) {
+    const wB = scratchUnit();
+    const srcB = path.join(wB, 'g.md');
+    fs.writeFileSync(srcB, guide(body));
+    const rB = build(wB, srcB);
+    check(`${name} fails the build`, !rB.ok);
+    check(`${name} says why`, wanted.test(rB.err), rB.err.trim());
+    check(`${name} names the file`, /g\.md/.test(rB.err), rB.err.trim());
+  }
+
+  // --- Math survives where text already works ----------------------------
+  // Equations turn up inside worksheet problems, which are numbered lists and
+  // table cells as often as paragraphs.
+  console.log('\nMath works in lists and table cells too');
+  const wL = scratchUnit();
+  const srcL = path.join(wL, 'g.md');
+  fs.writeFileSync(srcL, guide(
+    '1. Solve for $v_f$ given $a = 2$.\n\n' +
+    '| Quantity | Formula |\n' +
+    '| --- | --- |\n' +
+    '| Speed | $\\frac{d}{t}$ |\n'
+  ));
+  const rL = build(wL, srcL);
+  check('builds', rL.ok, rL.err.trim());
+  if (rL.ok) {
+    const {text, xml} = await textOf(path.join(wL, 'Test.docx'));
+    check('a numbered item can hold an equation', /<m:sSub>/.test(xml));
+    check('a table cell can hold an equation', /<m:f>/.test(xml));
+    check('no LaTeX source reaches the page', !/\\frac|\$/.test(text), text.slice(0, 200));
+  }
+
+  // --- <space> gives writing room on a worksheet -------------------------
+  // A worksheet needs vertical room under a question for a handwritten
+  // answer. A blank line cannot do it -- markdown discards blank lines, and
+  // should. Ruled underscore lines were tried first and rejected: they
+  // paginate badly and clutter the page. So one token, repeatable.
+  console.log('\n<space> makes writing room, and prints nothing');
+  const wS = scratchUnit();
+  const srcS = path.join(wS, 'g.md');
+  fs.writeFileSync(srcS, guide(
+    'Which car was faster? Write a claim.\n\n' +
+    '<space>\n\n' +
+    '<space>\n\n' +
+    'Give one sentence of evidence.\n'
+  ));
+  const rS = build(wS, srcS);
+  check('builds', rS.ok, rS.err.trim());
+  if (rS.ok) {
+    const {text, xml} = await textOf(path.join(wS, 'Test.docx'));
+    check('the token itself never reaches the page',
+          !text.includes('<space>') && !text.includes('space>'), text.slice(0, 200));
+    check('the questions around it still print',
+          text.includes('Write a claim.') && text.includes('one sentence of evidence'));
+    // Two tokens, two empty paragraphs, between the two questions.
+    const paras = xml.split('<w:p ').length + xml.split('<w:p>').length - 2;
+    check('it produced paragraphs rather than being dropped', paras > 2);
+  }
+
+  // --- A missing course.js is refused, not guessed -----------------------
+  console.log('\nA guides folder with no course.js is refused');
+  const bare = scratch();
+  const bareSrc = path.join(bare, 'g.md');
+  fs.writeFileSync(bareSrc, guide('Nothing special.'));
+  const rb0 = build(bare, bareSrc);
+  check('build fails', !rb0.ok);
+  check('the message names course.js', /course\.js/.test(rb0.err), rb0.err.trim());
+
+  // --- A bare link prints its target ------------------------------------
+  console.log('\nA bare link prints its target, which is usually what you want');
+  const w5 = scratchUnit();
+  const src5 = path.join(w5, 'g.md');
+  fs.writeFileSync(src5, guide('You will find what you need in [[robot_setup]].'));
+  const r5 = build(w5, src5);
+  check('builds', r5.ok, r5.err.trim());
+  if (r5.ok) {
+    const {text} = await textOf(path.join(w5, 'Test.docx'));
+    check('the name prints as typed', text.includes('what you need in robot_setup.'));
+    check('no brackets reach the page', !text.includes('[['), text.slice(0, 200));
+  }
+
+  // --- ...except a bare link to another guide ---------------------------
+  console.log('\nA bare link to another guide is refused: "p03" means nothing to a student');
+  const w3 = scratchUnit();
+  const src3 = path.join(w3, 'g.md');
+  fs.writeFileSync(src3, guide('You built this in [[e03]] last week.'));
+  const r3 = build(w3, src3);
+  check('build fails', !r3.ok);
+  check('the message names the fix', /\[\[e03\|/.test(r3.err), r3.err.trim());
+
+  // --- Frontmatter links are not guide-body links -----------------------
+  console.log('\nBare links in frontmatter are fine, and change nothing');
+  const w4 = scratchUnit();
+  const plain = path.join(w4, 'plain.md');
+  const withFm = path.join(w4, 'withfm.md');
+  fs.writeFileSync(plain, guide('A plain paragraph.', 'A.docx'));
+  fs.writeFileSync(withFm, guide('A plain paragraph.', 'B.docx')
+    .replace('scaffold: test.py', 'scaffold: test.py\ntags:\n  - demo\nrelated:\n  - "[[e03]]"'));
+  const ra = build(w4, plain), rb = build(w4, withFm);
+  check('both build', ra.ok && rb.ok, (ra.err + rb.err).trim());
+  if (ra.ok && rb.ok) {
+    const a = await textOf(path.join(w4, 'A.docx'));
+    const b = await textOf(path.join(w4, 'B.docx'));
+    check('properties do not change the page', a.text === b.text);
+  }
+
+  // --- The same markdown always gives the same document -----------------
+  // The file will not be byte-identical -- docProps carries a clock -- but
+  // every part a reader ever sees must be.
+  console.log('\nBuilding twice gives the same document');
+  const w6 = scratch(), w7 = scratch();
+  const one = fs.readdirSync(GUIDES).filter(f => GUIDE_NAME.test(f)).sort()[0];
+  const ra2 = build(w6, path.join(GUIDES, one));
+  const rb2 = build(w7, path.join(GUIDES, one));
+  check('both build', ra2.ok && rb2.ok, (ra2.err + rb2.err).trim());
+  if (ra2.ok && rb2.ok) {
+    const name = fs.readdirSync(w6).find(f => f.endsWith('.docx'));
+    const za = await JSZip.loadAsync(fs.readFileSync(path.join(w6, name)));
+    const zb = await JSZip.loadAsync(fs.readFileSync(path.join(w7, name)));
+    const differ = [];
+    for (const key of Object.keys(za.files)) {
+      if (za.files[key].dir || key === 'docProps/core.xml') continue;
+      const a = await za.files[key].async('base64');
+      const b = await zb.files[key].async('base64');
+      if (a !== b) differ.push(key);
+    }
+    check('every part but the clock is identical', differ.length === 0, differ.join(', '));
+  }
+
+  // --- build-all.sh only needs the deploy folder on a -d run --------------
+  // It used to resolve deploy.txt before it had even read the arguments, so a
+  // machine with no Drive mounted could not build a guide at all.
+  // Nothing here converts anything: the PDF is written first and is newer than
+  // its sources, so the run reports "up to date" and never reaches LibreOffice.
+  console.log('\nbuild-all.sh builds without the deploy folder');
+  const wNoDeploy = scratchUnit();
+  fs.writeFileSync(path.join(wNoDeploy, 'z01.md'), guide('Some words.', 'Z.docx'));
+  fs.writeFileSync(path.join(wNoDeploy, 'deploy.txt'), 'Some Shared Folder\n');
+  fs.writeFileSync(path.join(wNoDeploy, 'Z.pdf'), 'not really a pdf');
+  // CLASS_DEV_DIR is cleared for every run here. A plain run must not care
+  // that it is missing; a -d run is what complains, and that is checked below.
+  const runAll = args => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), args,
+                               {cwd: wNoDeploy, stdio: 'pipe',
+                                env: {...process.env, GUIDES: '', CLASS_DEV_DIR: ''}});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+  const noDeploy = runAll(['z01.md']);
+  check('a plain run succeeds', noDeploy.ok, noDeploy.out.trim());
+  check('it did not ask where the deploy folder is',
+        !/CLASS_DEV_DIR/.test(noDeploy.out), noDeploy.out.trim());
+  // The same run must not demand LibreOffice either. It converts nothing --
+  // every guide is current -- and this repo's CI runner has node and no
+  // LibreOffice, so an up-front tool check turns a green build red. Asserting
+  // on the message keeps the reason visible: a passing exit code alone would
+  // not say whether the tools were skipped or merely present.
+  check('it did not demand LibreOffice for a run that converts nothing',
+        !/not on PATH/.test(noDeploy.out), noDeploy.out.trim());
+
+  // The other half of the tool rule: a run that really does have to convert
+  // must still refuse, and still name what is missing. Deferring the check
+  // must not become skipping it. Simulated by making the guide stale and
+  // handing the script a PATH with node but no LibreOffice, which is the CI
+  // runner's shape.
+  const stalePdf = path.join(wNoDeploy, 'Z.pdf');
+  const past = new Date(Date.now() - 60_000);
+  fs.utimesSync(stalePdf, past, past);
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-bin-'));
+  // Search the REAL PATH, not a hardcoded list of directories. This used to
+  // look only in /usr/bin, /bin and /usr/local/bin, which stopped finding node
+  // the evening of 2026-08-29 when Ray's node moved from a /usr/local pkg to
+  // Homebrew's /opt/homebrew. The test then withheld node from its own fixture
+  // and failed complaining about the wrong tool. Found 2026-08-30.
+  const pathDirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  for (const t of ['node', 'dirname', 'grep', 'head', 'sed', 'awk', 'cat',
+                   'ls', 'mktemp', 'rm', 'mkdir', 'cp', 'mv', 'basename',
+                   'wc', 'sort', 'tr', 'sh', 'bash', 'env']) {
+    const found = pathDirs.map(d => path.join(d, t)).find(p => fs.existsSync(p));
+    if (found) fs.symlinkSync(found, path.join(bin, t));
+  }
+  let noTools;
+  try {
+    execFileSync(path.join(__dirname, 'build-all.sh'), ['z01.md'],
+                 {cwd: wNoDeploy, stdio: 'pipe', env: {PATH: bin}});
+    noTools = {ok: true, out: ''};
+  } catch (e) {
+    noTools = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a run that must convert still refuses without the conversion tools',
+        !noTools.ok, noTools.out.trim());
+  // Which tool it names depends on the machine, and asserting "soffice"
+  // specifically was wrong: build-all.sh adds /Applications/LibreOffice.app to
+  // PATH as a macOS fallback, so on a Mac with LibreOffice installed soffice is
+  // genuinely available and pdftoppm is the one that is missing. What matters
+  // is that it refuses and names a real culprit, not which culprit it is.
+  check('and it names a conversion tool that is missing',
+        /not on PATH:.*(soffice|pdftoppm)/.test(noTools.out), noTools.out.trim());
+  check('and node was not the thing it complained about',
+        !/not on PATH:.*\bnode\b/.test(noTools.out), noTools.out.trim());
+
+  // --- <newpage> starts a new page ---------------------------------------
+  // Added for physics' 1.8 motion lab, where each station's table and graph
+  // box have to be looked at together. A fenced box is one unbreakable block,
+  // so the flow always put a graph on the page after its own table, and no
+  // blank-line count fixed it — the space left at the foot of a page was
+  // always enough to pull the next station's heading and table up.
+  //
+  // Checked in the XML rather than the PDF, so it runs on the CI runner.
+  console.log('\n<newpage> starts a new page');
+  const wNP = scratchUnit();
+  const npMd = path.join(wNP, 'np.md');
+  fs.writeFileSync(npMd, guide('Before the break.\n\n<newpage>\n\nAfter the break.', 'NP.docx'));
+  const rNP = build(wNP, npMd);
+  check('builds', rNP.ok, rNP.err.trim());
+  if (rNP.ok) {
+    const {text, xml} = await textOf(path.join(wNP, 'NP.docx'));
+    check('one page break is emitted',
+          (xml.match(/<w:pageBreakBefore\/>/g) || []).length === 1,
+          (xml.match(/<w:pageBreakBefore\/>|<w:br[^>]*>/g) || []).join(' '));
+    // The break must ride on the paragraph that starts the new page, not sit
+    // in a paragraph of its own on the page above. A carrier paragraph needs
+    // a line where it sits, so a break asked for at the foot of a nearly full
+    // page cannot fit there, moves down, and breaks from the next page --
+    // leaving a blank one behind. That is a silent extra sheet in a student's
+    // hand, so the wrong mechanism is asserted against by name.
+    check('the break is not a standalone break paragraph',
+          !/<w:br w:type="page"\/>/.test(xml),
+          (xml.match(/<w:br[^>]*>/g) || []).join(' '));
+    check('the token itself does not print',
+          !/newpage/.test(text), text);
+    check('the text on both sides survives',
+          /Before the break\./.test(text) && /After the break\./.test(text), text);
+  }
+
+  // A break with nothing after it must be dropped. PAD_EVEN adds its own
+  // trailing break to pad an odd guide to even, so a <newpage> left at the end
+  // of a file would produce a second empty page — a blank sheet in a student's
+  // hand, and the build would report success.
+  const trailMd = path.join(wNP, 'trail.md');
+  fs.writeFileSync(trailMd, guide('Only paragraph.\n\n<newpage>', 'Trail.docx'));
+  const rTrail = build(wNP, trailMd);
+  check('a guide ending in <newpage> builds', rTrail.ok, rTrail.err.trim());
+  if (rTrail.ok) {
+    const {xml} = await textOf(path.join(wNP, 'Trail.docx'));
+    check('and emits no trailing page break',
+          !/<w:pageBreakBefore\/>/.test(xml) && !/<w:br w:type="page"\/>/.test(xml));
+  }
+
+  // Nothing that does not ask for a break may get one. Every guide in every
+  // vault predates this construct, so a stray break here would repaginate
+  // five courses at once.
+  const plainMd = path.join(wNP, 'plainnp.md');
+  fs.writeFileSync(plainMd, guide('No break anywhere.', 'PlainNP.docx'));
+  const rPlain = build(wNP, plainMd);
+  check('a guide with no <newpage> builds', rPlain.ok, rPlain.err.trim());
+  if (rPlain.ok) {
+    const {xml} = await textOf(path.join(wNP, 'PlainNP.docx'));
+    check('and gets no page break at all',
+          !/<w:pageBreakBefore\/>/.test(xml) && !/<w:br w:type="page"\/>/.test(xml));
+  }
+
+  // --- A guide's letter may be either case -------------------------------
+  // The glob was '[a-z][0-9][0-9].md' until 2026-09-07, so physics' lab guide
+  // L18.md was not a guide as far as build-all.sh was concerned. The failure
+  // was silent, which is what makes it worth a check: a full run simply never
+  // mentioned the file, and an edit to it produced nothing rather than an error.
+  //
+  // Nothing here converts. Both PDFs are written after their sources, so the
+  // run reports "up to date" and never reaches LibreOffice -- which keeps this
+  // check running on the CI runner, where there is none.
+  console.log('\nbuild-all.sh globs a guide by letter case and digit count');
+  const wCase = scratch();
+  fs.writeFileSync(path.join(wCase, 'course.js'), "module.exports = () => ({});\n");
+  fs.writeFileSync(path.join(wCase, 'L18.md'), guide('A lab.', 'Lab.docx'));
+  fs.writeFileSync(path.join(wCase, 'w18.md'), guide('A worksheet.', 'Sheet.docx'));
+  // Four digits: physics names a source for the unit as well as the lesson,
+  // because w07.md means "the seventh worksheet in whichever folder you happen
+  // to be looking at" and every unit has one. Robotics and Engineering still
+  // use two digits, so both widths have to work in the same glob.
+  fs.writeFileSync(path.join(wCase, 'w0107.md'), guide('Unit 1, lesson 7.', 'Unit.docx'));
+  fs.writeFileSync(path.join(wCase, 'Lab.pdf'), 'not really a pdf');
+  fs.writeFileSync(path.join(wCase, 'Sheet.pdf'), 'not really a pdf');
+  fs.writeFileSync(path.join(wCase, 'Unit.pdf'), 'not really a pdf');
+  // The other half of the rule: widening the glob must not turn every stray
+  // .md in the folder into a guide.
+  fs.writeFileSync(path.join(wCase, 'README.md'), 'Not a guide.\n');
+  fs.writeFileSync(path.join(wCase, 'Notes.md'), 'Not a guide either.\n');
+  let caseRun;
+  try {
+    caseRun = {ok: true,
+               out: execFileSync(path.join(__dirname, 'build-all.sh'), [],
+                                 {cwd: wCase, stdio: 'pipe'}).toString()};
+  } catch (e) {
+    caseRun = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a full run succeeds', caseRun.ok, caseRun.out.trim());
+  check('it saw the guide whose letter is capitalized',
+        /Lab\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('it still saw the lowercase one',
+        /Sheet\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('it saw the four-digit unit-and-lesson one',
+        /Unit\.pdf/.test(caseRun.out), caseRun.out.trim());
+  check('and it swept up neither README.md nor Notes.md',
+        /\b0 built, 3 already current\b/.test(caseRun.out), caseRun.out.trim());
+
+  // --- A guide can deploy into a subfolder of the target -----------------
+  // Physics keeps a section's worksheet, answer sheet and teaching plan
+  // together in a folder named for the section, because the section number
+  // is easier to find as a folder than buried in three filenames. A guide
+  // with no `folder:` line must still land straight in the target, which is
+  // what Robotics and Engineering rely on.
+  console.log('\nfolder: in frontmatter deploys into a subfolder');
+  // A bare scratch folder, not scratchUnit(): this run globs every guide in
+  // the folder, and scratchUnit's empty sibling files have no frontmatter.
+  const wF = scratch();
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-deploy-'));
+  fs.writeFileSync(path.join(wF, 'course.js'), "module.exports = () => ({});\n");
+  fs.writeFileSync(path.join(wF, 'y01.md'),
+    guide('In a subfolder.', 'Sub.docx').replace('number: "99"', 'number: "99"\nfolder: "1.2"'));
+  fs.writeFileSync(path.join(wF, 'y02.md'), guide('At the top.', 'Top.docx'));
+  const runF = () => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), ['-d'],
+                               {cwd: wF, stdio: 'pipe', env: {...process.env, GUIDES: target}});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+  // This one deploys for real, so it converts, so it needs LibreOffice.
+  if (!HAS_SOFFICE) {
+    skip('builds and deploys', 'no soffice');
+    skip('a guide naming a folder lands in it', 'no soffice');
+    skip('a guide with no folder still lands at the top', 'no soffice');
+    skip('the subfolder guide did NOT also land at the top', 'no soffice');
+  } else {
+    const rF = runF();
+    check('builds and deploys', rF.ok, rF.out.trim());
+    if (rF.ok) {
+      check('a guide naming a folder lands in it',
+            fs.existsSync(path.join(target, '1.2', 'Sub.pdf')),
+            fs.readdirSync(target).join(', '));
+      check('a guide with no folder still lands at the top',
+            fs.existsSync(path.join(target, 'Top.pdf')),
+            fs.readdirSync(target).join(', '));
+      check('the subfolder guide did NOT also land at the top',
+            !fs.existsSync(path.join(target, 'Sub.pdf')));
+    }
+  }
+
+  // --- the deploy folder comes from CLASS_DEV_DIR -------------------------
+  // build-all.sh used to find(1) the whole of ~/Library/CloudStorage on every
+  // -d run. Drive File Stream serves one folder listing at a time, so a run
+  // that matched nothing had to visit everything and never came back -- the
+  // suite hung right here on 2026-09-13. There is no search now. The path is
+  // exported from ~/.zshrc, once per machine, and the build only checks it.
+  //
+  // Nothing here converts: Z.pdf is written fresh, so the guide is current and
+  // the run never reaches LibreOffice. These run on the CI runner.
+  console.log('\nthe deploy folder comes from CLASS_DEV_DIR');
+  fs.writeFileSync(stalePdf, 'not really a pdf');
+  const classDev = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-classdev-'));
+  // HOME points at an empty folder for every run below. If any of them still
+  // searched, there is nothing under it to find -- passing proves no search.
+  const noHome = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-home-'));
+  const runDeploy = env => {
+    try {
+      const out = execFileSync(path.join(__dirname, 'build-all.sh'), ['-d', 'z01.md'],
+                               {cwd: wNoDeploy, stdio: 'pipe',
+                                env: {...process.env, HOME: noHome,
+                                      GUIDES: '', CLASS_DEV_DIR: '', ...env}});
+      return {ok: true, out: out.toString()};
+    } catch (e) {
+      return {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+    }
+  };
+
+  const good = runDeploy({CLASS_DEV_DIR: classDev});
+  check('a -d run succeeds with CLASS_DEV_DIR set', good.ok, good.out.trim());
+  check('and it deployed into it',
+        fs.existsSync(path.join(classDev, 'Z.pdf')), fs.readdirSync(classDev).join(', '));
+
+  // The message is the whole feature when the variable is missing: this is the
+  // only thing standing between a new machine and a confusing failure.
+  const unset = runDeploy();
+  check('an unset CLASS_DEV_DIR fails the run', !unset.ok, unset.out.trim());
+  check('and the message names the variable',
+        /CLASS_DEV_DIR/.test(unset.out), unset.out.trim());
+  check('and it gives the export line to add',
+        /export CLASS_DEV_DIR=/.test(unset.out), unset.out.trim());
+  check('and it does not go searching for the folder',
+        !/looking for|find/.test(unset.out), unset.out.trim());
+
+  // Set but gone is a different fault and gets a different message: the path
+  // is right and Drive is not mounted.
+  const gone = runDeploy({CLASS_DEV_DIR: path.join(os.tmpdir(), 'guide-no-such-classdev')});
+  check('a CLASS_DEV_DIR that is not there fails the run', !gone.ok, gone.out.trim());
+  check('and the message names the path it was given',
+        gone.out.includes('guide-no-such-classdev'), gone.out.trim());
+
+  // deploy.txt asks for a course folder inside it. Present variable, missing
+  // course folder, is a third fault and must not read as either of the above.
+  const wRest = scratchUnit();
+  fs.writeFileSync(path.join(wRest, 'z01.md'), guide('Some words.', 'Z.docx'));
+  fs.writeFileSync(path.join(wRest, 'deploy.txt'), 'Some Shared Folder/Course/Guides\n');
+  fs.writeFileSync(path.join(wRest, 'Z.pdf'), 'not really a pdf');
+  let noRest;
+  try {
+    noRest = {ok: true,
+              out: execFileSync(path.join(__dirname, 'build-all.sh'), ['-d', 'z01.md'],
+                                {cwd: wRest, stdio: 'pipe',
+                                 env: {...process.env, HOME: noHome, GUIDES: '',
+                                       CLASS_DEV_DIR: classDev}}).toString()};
+  } catch (e) {
+    noRest = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a missing course folder inside it fails the run', !noRest.ok, noRest.out.trim());
+  check('and the message names the course folder deploy.txt asked for',
+        /Course\/Guides/.test(noRest.out), noRest.out.trim());
+
+  // --- node warnings ------------------------------------------------------
+  // node 22+ carries a localStorage global and warns, per process, that it is
+  // not backed by a file. A dependency reads the global to sniff for a browser,
+  // so every guide printed two of them on one of Ray's Macs and none on the
+  // other. build-all.sh silences ExperimentalWarning for what it runs, and
+  // nothing else -- a deprecation is ours to fix, not to hide.
+  //
+  // Read from the source. Whether node actually emits the warning depends on
+  // its version, so a check that built a guide and looked for a clean run
+  // would pass on a runner that was never going to print one.
+  console.log('\nbuild-all.sh silences node experimental warnings, not deprecations');
+  const buildSrc = fs.readFileSync(path.join(__dirname, 'build-all.sh'), 'utf8');
+  check('it exports --disable-warning=ExperimentalWarning',
+        /export NODE_OPTIONS=.*--disable-warning=ExperimentalWarning/.test(buildSrc));
+  check('and it keeps a NODE_OPTIONS that is already set',
+        /export NODE_OPTIONS="\$\{NODE_OPTIONS:\+/.test(buildSrc));
+  check('and it silences nothing else',
+        !/--no-warnings|--no-deprecation|--disable-warning=DEP/.test(buildSrc));
+
+  // And that it actually reaches what build-all.sh spawns, which the source
+  // check above cannot know. The only two things it spawns are make.js, which
+  // runs only for a stale guide and then needs a real LibreOffice, and an
+  // extra's recipe. So the fixture uses an extra whose recipe reports the
+  // environment it was handed.
+  //
+  // build-all.sh checks for the tools before running a recipe, on purpose -- a
+  // recipe usually reaches topdf.js and therefore LibreOffice. Nothing is
+  // converted here: the guide is current and the recipe only writes a text
+  // file. So stub soffice and pdftoppm satisfy that check and are never
+  // called. Without them this would have to skip on the CI runner, for a
+  // reason that has nothing to do with what it tests.
+  const wOpts = scratch();
+  fs.writeFileSync(path.join(wOpts, 'course.js'), "module.exports = () => ({});\n");
+  fs.writeFileSync(path.join(wOpts, 'e04.md'), guide('Some words.', 'E4.docx'));
+  fs.writeFileSync(path.join(wOpts, 'E4.pdf'), 'not really a pdf');
+  fs.writeFileSync(path.join(wOpts, 'extras.txt'),
+    'opts.txt :: node -e "require(\'fs\').writeFileSync(\'opts.txt\', process.env.NODE_OPTIONS || \'\')"\n');
+  const stubBin = fs.mkdtempSync(path.join(os.tmpdir(), 'guide-stub-'));
+  for (const t of ['soffice', 'pdftoppm']) {
+    const f = path.join(stubBin, t);
+    fs.writeFileSync(f, '#!/bin/sh\nexit 0\n');
+    fs.chmodSync(f, 0o755);
+  }
+  let optsRun;
+  try {
+    optsRun = {ok: true,
+               out: execFileSync(path.join(__dirname, 'build-all.sh'), [],
+                                 {cwd: wOpts, stdio: 'pipe',
+                                  env: {...process.env,
+                                        PATH: stubBin + path.delimiter + process.env.PATH,
+                                        NODE_OPTIONS: '--max-old-space-size=512'}}).toString()};
+  } catch (e) {
+    optsRun = {ok: false, out: ((e.stderr || '') + (e.stdout || '')).toString()};
+  }
+  check('a full run with an extra succeeds', optsRun.ok, optsRun.out.trim());
+  const handed = fs.existsSync(path.join(wOpts, 'opts.txt'))
+    ? fs.readFileSync(path.join(wOpts, 'opts.txt'), 'utf8') : '';
+  check('the flag reaches what it spawns',
+        /--disable-warning=ExperimentalWarning/.test(handed), handed);
+  check('and a NODE_OPTIONS already set reaches it too',
+        /--max-old-space-size=512/.test(handed), handed);
+
+  // --- <widths> sets a table's column proportions -------------------------
+  // Added for physics lesson plans: a column of steps beside three narrow
+  // boxes to tick. Shared evenly, the steps wrap to three lines each and a
+  // one-page checklist runs to three. Opt-in, so every table already written
+  // keeps its even split.
+  //
+  // Read from the table grid in the XML, so it runs on the CI runner.
+  console.log('\n<widths> sets column proportions for the next table');
+  const gridsOf = xml => [...xml.matchAll(/<w:tblGrid>(.*?)<\/w:tblGrid>/g)]
+    .map(m => [...m[1].matchAll(/w:w="(\d+)"/g)].map(g => +g[1]));
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  const wW = scratchUnit();
+  const wMd = path.join(wW, 'g.md');
+  fs.writeFileSync(wMd, guide(
+    '<widths 5 1 1 1>\n\n' +
+    '| Step | A | B | C |\n| --- | --- | --- | --- |\n| Attendance | | | |\n\n' +
+    'Words between the two tables.\n\n' +
+    '| Part | Picture |\n| --- | --- |\n| Wire | |\n'
+  ));
+  const rW = build(wW, wMd);
+  check('builds', rW.ok, rW.err.trim());
+  if (rW.ok) {
+    const {text, xml} = await textOf(path.join(wW, 'Test.docx'));
+    const [sized, plain] = gridsOf(xml);
+    check('the first column is several times the others',
+          sized && sized.length === 4 && sized[0] >= 4 * sized[1], JSON.stringify(sized));
+    check('the narrow columns match each other',
+          sized && Math.abs(sized[1] - sized[2]) <= 1, JSON.stringify(sized));
+    check('the sized table still fills the text width',
+          sized && plain && sum(sized) === sum(plain), JSON.stringify([sized, plain]));
+    check('a table with no <widths> above it still splits evenly',
+          plain && plain.length === 2 && Math.abs(plain[0] - plain[1]) <= 1,
+          JSON.stringify(plain));
+    check('the token itself does not print', !/widths/.test(text), text);
+  }
+
+  for (const [name, body, wanted] of [
+    ['a <widths> with the wrong number of columns',
+     '<widths 5 1>\n\n| Step | A | B |\n| --- | --- | --- |\n| x | | |\n',
+     /2 width\(s\).*3 column\(s\)/s],
+    ['a <widths> with no table under it',
+     '<widths 5 1>\n\nJust a paragraph.\n',
+     /no table under it/],
+    ['a <widths> at the very end of a guide',
+     'A paragraph.\n\n<widths 5 1>\n',
+     /no table under it/],
+  ]) {
+    const wB = scratchUnit();
+    const srcB = path.join(wB, 'g.md');
+    fs.writeFileSync(srcB, guide(body));
+    const rB = build(wB, srcB);
+    check(`${name} fails the build`, !rB.ok);
+    check(`${name} says why`, wanted.test(rB.err), rB.err.trim());
+    check(`${name} names the file`, /g\.md/.test(rB.err), rB.err.trim());
+  }
+
+  console.log('\ntopdf.js finds soffice without a shell');
+  const topdfSrc = fs.readFileSync(path.join(__dirname, 'topdf.js'), 'utf8');
+  check('it spawns nothing with shell: true',
+        !/shell:\s*true/.test(topdfSrc));
+  const probe = execFileSync(process.execPath,
+    ['-e', 'require(process.argv[1]); console.log("loaded")',
+     path.join(__dirname, 'topdf.js')],
+    {stdio: 'pipe'}).toString();
+  check('and it loads clean', /loaded/.test(probe), probe.trim());
+
+  if (skipped) {
+    console.log(`\n${skipped} check(s) skipped — no LibreOffice on this machine.`);
+    console.log('Those cover PDF conversion and deployment. Run this on a machine');
+    console.log('with soffice before trusting a change to either.');
+  }
+  console.log(failures === 0
+    ? '\nAll checks passed.'
+    : `\n${failures} check(s) failed.`);
+  process.exit(failures === 0 ? 0 : 1);
+}
+
+main();
