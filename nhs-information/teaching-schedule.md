@@ -111,6 +111,17 @@ Grading one section's lab takes at least 80 minutes, one full block.
 PowerSchool as he grades. There is no separate "Update PowerSchool" task after
 grading — not for exams, labs, make-ups or retakes. The grading task covers it.
 
+**Exams go back in this order, every time** (Ray, 2026-10-19):
+
+1. Grade.
+2. Confirm with the PLC that exams can go back. Another teacher may not
+   have given the exam yet.
+3. Print the bubble-sheet responses and the question descriptions.
+4. Return the OR papers. MC papers stay with Ray.
+
+A step can share a day with the one before it, but never come before it.
+The PLC check and the prints happen once and serve every section.
+
 Creating the assignment in PowerSchool is different. Ray still puts an
 assignment into PowerSchool when it is assigned, not when it is graded.
 
