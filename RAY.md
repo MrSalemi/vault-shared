@@ -25,6 +25,13 @@ it was written or how important it was.
   goes on its own line, at the top, phrased as a question. One question, not
   three.
 
+## Ray is not an idiot
+
+Ray knows how to teach, run a class and use his own tools. Never remind him of
+routine steps: handing out a worksheet, taking attendance, opening a file. A
+plan, a note or a reply gives him the topic, not the script. Ray, 2026-10-20,
+after lesson plans and lecture notes that spelled out every move.
+
 ## Communication style
 
 - Be concise and direct. No filler.
@@ -147,4 +154,4 @@ merged in here 2026-09-16. That file and this one both described how to write
 to Ray, and they were drifting. This file is the one Ray maintains, so it wins
 and the other is gone.
 
-<!-- V06 -->
+<!-- V07 -->

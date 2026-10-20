@@ -232,6 +232,16 @@ stopping at `0107` is that decision's fingerprint, not a gap.
 to teach the class, so nothing hangs on it. They sit in Anytime. See
 `things-write-rules.md`, "Today holds only what must be done today".
 
+**The lecture notes are a topic list Ray glances at while teaching.** Page one is
+`# Topics`, a short bulleted list of topic names in order, a few words each.
+A topic that is a set may carry its members after a colon ("The five forces:
+F_gravity, F_applied, F_tension, F_normal, F_friction"). Then `# Videos`,
+always present even when empty: Ray adds the videos he uses, so it becomes
+next year's list. Claude never fills it. Then `# Board examples`, one line each with the answer. No
+"Where this sits", no sub-headers per topic, no worksheet hand-out, no Watch
+for. Ray, 2026-10-20: "I need a single sheet that I can put in front of me and
+glance at." A key point buried in a bullet (inertia is mass) got skipped.
+
 ### From `wNNNN.md` — the worksheet
 
 1. **Build** it, if it does not exist yet.
