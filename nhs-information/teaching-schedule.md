@@ -14,7 +14,6 @@ A standing fact. Present tense. If it becomes wrong, edit this file.
 - Email home for D students
 - Print prep — physics
 - Work it by hand
-- Complete the solutions before printing
 - What a lesson document creates
 - Home or school
 - Print prep — engineering and robotics
@@ -178,32 +177,22 @@ deadline per worksheet, not per task title.
 
 ## Work it by hand
 
-Every physics worksheet Ray prints, he then works himself, start to finish.
-The scan of his copy becomes the answer key. Claude never writes an answer
-sheet — see the physics vault, DECISIONS #47.
+Every physics worksheet, Ray works himself, start to finish, **before it
+prints**. That catches an error in the sheet before a stack of copies goes
+out, and the scan of his copy becomes the answer key. Claude never writes an
+answer sheet — see the physics vault, DECISIONS #47.
 
-So each worksheet creates **three** tasks, not two: build, print, and work by
-hand. The work task sits on the print day, and its deadline is the day before
-first use. Phrase it "Work W0109 and W0110 by hand".
+"Work it by hand", "complete the solutions" and "create the answer key" are
+one job (Ray, 2026-10-20). It makes **one** task, phrased "Work W0109 by
+hand". It is home work. Its deadline is the print day, and the print task
+depends on it. Never make a separate "Complete solutions" task.
 
 This applies to labs and activity sheets too, not worksheets only. Anything
 students will hand back with answers on it, Ray does first.
 
 A build task is not finished until its work-by-hand task exists.
 
-## Complete the solutions before printing
-
-Before a physics worksheet prints, Ray completes its solutions. That is how an
-error in the sheet gets caught before a stack of copies goes out. Phrase it
-"Complete W0112 solutions before printing".
-
-It is home work. Its deadline is the print day, and the print task depends on
-it.
-
-Recorded 2026-09-27, stated by Ray after he found an error in W0113.
-
-"Work it by hand" and "create the answer key" are the same job under two names.
-Use "Work <material> by hand".
+Recorded 2026-09-27, after Ray found an error in W0113. Merged 2026-10-20.
 
 ## What a lesson document creates
 
@@ -246,12 +235,11 @@ to teach the class, so nothing hangs on it. They sit in Anytime. See
 ### From `wNNNN.md` — the worksheet
 
 1. **Build** it, if it does not exist yet.
-2. **Complete the solutions** — before it prints. This catches an error in the
-   sheet before students get it.
+2. **Work it by hand** — before it prints. This catches an error in the
+   sheet, and the scan becomes the answer key.
 3. **Print it for all three physics sections.**
-4. **Work it by hand** — the scan becomes the answer key.
 
-All four worksheet tasks, and all three Teaching Plan tasks, are done before
+All three worksheet tasks, and all three Teaching Plan tasks, are done before
 the class.
 
 **A worksheet gets no PowerSchool task.** There is no "Capture in PowerSchool"
