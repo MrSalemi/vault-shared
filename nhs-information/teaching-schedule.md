@@ -146,6 +146,13 @@ belongs to the material, not the section, and its deadline is set by the
 the section Ray is thinking about. Phrase it "Print W0109 and W0110 for all
 three physics sections".
 
+**Formative warm-ups (from Unit 03, physics DECISIONS #105, #106).** Every
+teaching lesson has a `GUULL` Got It / Missed It sheet: print it two-sided, one
+per student, the school day before the first section has the lesson. The
+`FUULL` warm-up is projected, never printed. `S0000 Warm-up Answer Sheet` is
+printed in a stack once per unit, one per student per warm-up lesson. No
+warm-up on lab, review, exam or spare days. Printing is at school only.
+
 Work backward from the first section, then step back one school day. When
 that day is a holiday, or a day Ray is out, step back again to the last school
 day he is actually in the building.
