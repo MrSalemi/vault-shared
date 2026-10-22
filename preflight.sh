@@ -61,14 +61,18 @@ else
 fi
 
 say "4. Test suite, as the CI runner sees it (NO_SOFFICE=1)"
-if NO_SOFFICE=1 node test-build.js test-fixtures >/tmp/preflight-ci.log 2>&1; then
-    grep -E "SKIP|skipped|All checks" /tmp/preflight-ci.log | sed 's/^/   /'
+# A fresh file each run. A fixed /tmp name breaks the gate for good the
+# first time another user leaves one behind that this user cannot overwrite.
+cilog=$(mktemp "${TMPDIR:-/tmp}/preflight-ci.XXXXXX")
+if NO_SOFFICE=1 node test-build.js test-fixtures >"$cilog" 2>&1; then
+    grep -E "SKIP|skipped|All checks" "$cilog" | sed 's/^/   /'
     echo "   OK"
 else
     echo "   FAILED -- this is what the Action will do:"
-    sed 's/^/   /' /tmp/preflight-ci.log
+    sed 's/^/   /' "$cilog"
     fail=1
 fi
+rm -f "$cilog"
 
 say "Result"
 if [ "$fail" -eq 0 ]; then

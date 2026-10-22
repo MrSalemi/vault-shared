@@ -142,6 +142,7 @@ function para(text, o = {}) {
   return new Paragraph({children: runs(text, o.base || {}),
                         alignment: ALIGN_BODY,
                         spacing: {after: o.after ?? 120, line: LINE},
+                        ...(o.keepNext ? {keepNext: true} : {}),
                         ...(o.brk || {})});
 }
 function bulletP(text) {
@@ -352,6 +353,7 @@ function tableBlock(spec, contentDir) {
 // "## Step n" with a screenshot under each -- which is every guide here -- is
 // exactly that shape. A heading opens a new section anyway, so the picture above
 // it belongs to the text it illustrates, not to the heading underneath.
+const LEADS_INTO = new Set(["code", "b", "n", "table"]);
 function render(blocks, contentDir) {
   const out = [];
   for (let at = 0; at < blocks.length; at++) {
@@ -429,7 +431,12 @@ function render(blocks, contentDir) {
         "<widths> has no table under it\n" +
         "  put it on the line directly above the table it sizes");
     } else if (kind === "p") {
-      out.push(para(payload, {brk}));
+      // A sentence ending in a colon introduces what comes next -- "This is
+      // how P08 wrote its patrol:" -- and is meaningless at the foot of a
+      // page with its code on the next. Keep it with the block it leads into.
+      // Only the lead-in carries keepNext, so nothing chains.
+      const leadsIn = LEADS_INTO.has(next) && /:[*_]*\s*$/.test(payload);
+      out.push(para(payload, {brk, keepNext: leadsIn}));
     } else if (kind === "b") {
       payload.forEach(t => out.push(bulletP(t)));
       out.push(new Paragraph({children: [], spacing: {after: 60}}));

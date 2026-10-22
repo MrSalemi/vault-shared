@@ -211,6 +211,32 @@ async function main() {
           !/w:val="both"|w:val="distribute"/.test(xml));
   }
 
+  // --- A lead-in sentence stays with what it introduces -------------------
+  // "This is how P08 wrote its patrol:" at the foot of a page, with the code
+  // on the next, reads as nothing (P09, 2026-10-22).
+  console.log('\nA lead-in stays with its block');
+  const wLead = scratchUnit();
+  const srcLead = path.join(wLead, 'g.md');
+  fs.writeFileSync(srcLead, guide(
+    'Here is the code:\n\n```\nx = 1\n```\n\n' +
+    'Here is the list:\n\n- one\n- two\n\n' +
+    'A plain sentence.\n\n```\ny = 2\n```\n\n' +
+    'Ends in a colon, then prose:\n\nMore prose.\n'
+  ));
+  const rLead = build(wLead, srcLead);
+  check('builds', rLead.ok, rLead.err.trim());
+  if (rLead.ok) {
+    const {xml} = await textOf(path.join(wLead, 'Test.docx'));
+    const paraOf = words => (xml.match(/<w:p[ >].*?<\/w:p>/g) || [])
+      .find(p => p.includes(words)) || '';
+    const kept = words => /<w:keepNext\/>/.test(paraOf(words));
+    check('a colon before code keeps with it', kept('Here is the code:'));
+    check('a colon before a list keeps with it', kept('Here is the list:'));
+    check('a sentence without a colon does not', !kept('A plain sentence.'));
+    check('a colon before plain prose does not',
+          !kept('Ends in a colon, then prose:'));
+  }
+
   // --- $math$ becomes a real Word equation -------------------------------
   // Physics guides carry 209 equations across the year, and every one of them
   // is a fraction, a subscript, a superscript, both scripts at once, or a
