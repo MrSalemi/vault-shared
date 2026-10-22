@@ -145,6 +145,9 @@ write.
 - When handing Ray commands to copy, always include the push in the same
   block. A commit he has to follow with a push he types himself is a
   half-finished hand-off.
+- Commit messages carry no attribution lines — no `Co-Authored-By`, no
+  `Claude-Session`, nothing naming Claude. Ray, 2026-10-22: "They are not
+  helpful."
 
 ## Where this came from
 
