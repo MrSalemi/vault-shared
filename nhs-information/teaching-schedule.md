@@ -283,10 +283,13 @@ for all three sections, morning announcements included; Ray skips what does not
 apply. Exam, review and lab days get the same plan.
 
 **The steps are broad: one row per part of the period.** A regular lesson is
-Formative, Announcements, Attendance, Video, Lecture, Worksheet, in that order,
+Formative, Announcements, Attendance, Return papers, Video, Lecture, Worksheet,
+in that order,
 each naming its material with a link. No board examples, answers, timings or
 classroom moves. Ray, 2026-10-20, on a 19-row plan: "I just need broadly the
-steps we are following."
+steps we are following." Every plan has Return papers right after
+Attendance: Ray keeps finished work in a desk drawer and needs the reminder to
+take it out (Ray, 2026-10-22).
 
 **A review day's plan has a Moodle step early in the period**, right after
 attendance and announcements, before the review work: students work in Moodle
