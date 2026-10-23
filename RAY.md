@@ -101,6 +101,10 @@ When something is genuinely ambiguous, make the call, do it, and say in one
 line what was decided. Ray corrects it next time. Stopping a run to have him
 arbitrate costs him more than a wrong guess does.
 
+Never offer or ask to close out a thread. Only Ray knows when the work is
+done, and he runs close-out himself. Ray, 2026-10-22: "Who knows if we are
+done."
+
 ## If it matters, it becomes a task
 
 Anything worth telling Ray is worth putting in Things 3. He said so directly on
