@@ -1,6 +1,6 @@
 # Ray Salemi — working profile
 
-Read by every thread when it starts (via start-thread), from `~/vaults/shared`,
+Read by every thread when it starts (via `catch-up`), from `~/vaults/shared`,
 which every vault reaches through its `shared/` symlink. Describes Ray, not any
 one project — project-specific state stays in that vault's own PROJECT.md and
 DECISIONS.md.

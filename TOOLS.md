@@ -276,7 +276,7 @@ so every course reads one copy. Nothing in the build touches it.
 
 ### `RAY.md` — the working profile
 
-Read by every thread at start, via `start-thread`. Describes how Ray works, not
+Read by every thread at start, via `catch-up`. Describes how Ray works, not
 any one project.
 
 ---
