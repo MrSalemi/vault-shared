@@ -337,6 +337,15 @@ leave it sitting on Today as overdue.
 
 Recorded 2026-10-03, stated by Ray.
 
+**A task that drifts is a wrongly dated task.** A task still open a day or
+more after its start date did not need doing that day. Ray, 2026-11-01: an
+empty Today at the end of the day is the test; anything left over is a
+problem. Every `daily-brief` run lists each task on Today with a start date
+before today and asks Ray, in chat, one question per task: Anytime, or the
+real date it must be done. Never re-date a drifting task to today on your own.
+Ray's own repeating tasks (Morning PT, Walk the dogs and the like) are his and
+are not asked about.
+
 ## What a conflict is
 
 Two tasks on the same day is not a conflict. Neither is a full day, an evening
