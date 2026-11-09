@@ -11,8 +11,11 @@ const {Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow,
        LineRuleType} = d;
 
 const CODE_BORDER = "9A9A9A";
-// One step of ">>" indentation, in twips (0.5 in).
+// One step of ">>" indentation, in twips (0.5 in). 15 twips is one pixel at
+// 96 dpi, which is how a picture's width is counted.
 const INDENT_STEP = 720;
+// ">> ![[thing.png]]" or ">> ![alt](images/thing.png)" on a line of its own.
+const INDENTED_PICTURE = /^!\[\[([^\]|]+?)(?:\|([^\]]*))?\]\]$|^!\[([^\]]*)\]\(([^)]+)\)$/;
 const PAGE_W = 9360;
 
 // The monospace face used for code blocks and inline backticks. Guides are read
@@ -229,7 +232,9 @@ function imageBlock(spec, contentDir, o = {}) {
   const scale = Math.min(1, capW / size.width, capH / size.height);
   return new Paragraph({
     alignment: o.align || AlignmentType.CENTER,
+    ...(o.indent ? {indent: {left: o.indent}} : {}),
     ...(o.keepNext === false ? {} : {keepNext: true}),
+    ...(o.brk || {}),
     spacing: {before: 80, after: 160},
     children: [new ImageRun({
       data: data,
@@ -441,6 +446,18 @@ function render(blocks, contentDir) {
       // A paragraph keeps with an indented run under it, so a question is
       // never left at the foot of a page with its choices on the next.
       out.push(para(payload, {brk, keepNext: leadsIn || next === "indent"}));
+    } else if (kind === "indent" && INDENTED_PICTURE.test(payload.text)) {
+      // ">> ![[thing.png]]": a picture that is itself an indented line, such
+      // as a multiple-choice question whose options are drawn in one picture.
+      // It starts at the indent, left-aligned, and shrinks to fit the column
+      // that is left. Same keep-together rule as an indented line of text.
+      const m = payload.text.match(INDENTED_PICTURE);
+      const src = m[1] || m[4], alt = m[2] || m[3] || "";
+      out.push(imageBlock({alt, src}, contentDir, {
+        align: AlignmentType.LEFT,
+        indent: INDENT_STEP * payload.level,
+        maxWidth: TEXT_COLUMN_PX - Math.round(INDENT_STEP * payload.level / 15),
+        keepNext: next === "indent", brk}));
     } else if (kind === "indent") {
       // An indented line, 0.5 in per level. A run of indented lines keeps
       // together, and the paragraph above it keeps with the first one, so a

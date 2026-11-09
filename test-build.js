@@ -1010,6 +1010,34 @@ async function main() {
     check('a plain paragraph is not indented', plain && !/<w:ind /.test(plain), plain.slice(0, 300));
   }
 
+  // A picture can be an indented line too: a question whose options are
+  // drawn in one picture. It starts at the indent and still keeps with the
+  // question above it.
+  const wP = scratchUnit();
+  if (!fs.existsSync(path.join(wP, 'images', 'test_pic.png'))) {
+    skip('>> indents a picture', 'no picture in this guides folder to borrow');
+  } else {
+    const srcP = path.join(wP, 'g.md');
+    fs.writeFileSync(srcP, guide(
+      '**7.** Which graph shows the same motion?\n\n' +
+      '>> ![[test_pic.png]]\n\n' +
+      'After the picture.\n'
+    ));
+    const rP = build(wP, srcP);
+    check('an indented picture builds', rP.ok, rP.err.trim());
+    if (rP.ok) {
+      const {xml} = await textOf(path.join(wP, 'Test.docx'));
+      const paras = xml.split('</w:p>');
+      const pic = paras.find(p => p.includes('<w:drawing>')) || '';
+      const stem = paras.find(p => p.replace(/<[^>]+>/g, '').includes('same motion')) || '';
+      check('the picture starts at the indent', /<w:ind [^>]*w:left="720"/.test(pic), pic.slice(0, 300));
+      check('the picture is left-aligned, not centered', /<w:jc w:val="(left|start)"\/>/.test(pic), pic.slice(0, 300));
+      check('the question keeps with its picture', /<w:keepNext\/>/.test(stem), stem.slice(0, 300));
+      const cx = +(pic.match(/<wp:extent cx="(\d+)"/) || [0, 0])[1];
+      check('the picture fits the column left beside the indent', cx > 0 && cx <= 6 * 914400, String(cx));
+    }
+  }
+
   console.log('\ntopdf.js finds soffice without a shell');
   const topdfSrc = fs.readFileSync(path.join(__dirname, 'topdf.js'), 'utf8');
   check('it spawns nothing with shell: true',
