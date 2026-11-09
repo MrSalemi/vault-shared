@@ -1,4 +1,4 @@
-// Guide generator V06.
+// Guide generator V07.
 // Inline markup in any text: `code`, $math$, **bold**, *italic*, and links,
 // which print as their label only.
 const d = require('docx');
@@ -11,6 +11,8 @@ const {Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow,
        LineRuleType} = d;
 
 const CODE_BORDER = "9A9A9A";
+// One step of ">>" indentation, in twips (0.5 in).
+const INDENT_STEP = 720;
 const PAGE_W = 9360;
 
 // The monospace face used for code blocks and inline backticks. Guides are read
@@ -436,7 +438,23 @@ function render(blocks, contentDir) {
       // page with its code on the next. Keep it with the block it leads into.
       // Only the lead-in carries keepNext, so nothing chains.
       const leadsIn = LEADS_INTO.has(next) && /:[*_]*\s*$/.test(payload);
-      out.push(para(payload, {brk, keepNext: leadsIn}));
+      // A paragraph keeps with an indented run under it, so a question is
+      // never left at the foot of a page with its choices on the next.
+      out.push(para(payload, {brk, keepNext: leadsIn || next === "indent"}));
+    } else if (kind === "indent") {
+      // An indented line, 0.5 in per level. A run of indented lines keeps
+      // together, and the paragraph above it keeps with the first one, so a
+      // question's multiple-choice options never split across a page. The
+      // last line of a run gets extra room below it, so the next question
+      // reads as a new item. Ray, 2026-11-09: "Multiple choice options must
+      // be indented"; a general command rather than a special case for tests.
+      out.push(new Paragraph({
+        children: runs(payload.text),
+        alignment: ALIGN_BODY,
+        indent: {left: INDENT_STEP * payload.level},
+        spacing: {after: next === "indent" ? 80 : 240, line: LINE},
+        ...(next === "indent" ? {keepNext: true} : {}),
+        ...brk}));
     } else if (kind === "b") {
       payload.forEach(t => out.push(bulletP(t)));
       out.push(new Paragraph({children: [], spacing: {after: 60}}));
