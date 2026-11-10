@@ -292,11 +292,11 @@ Attendance: Ray keeps finished work in a desk drawer and needs the reminder to
 take it out (Ray, 2026-10-22), and collects work due that day at the same time
 (Ray, 2026-11-03: "Collect and Return Papers" rather than "Return Papers").
 
-**A review day's plan has a Moodle step early in the period**, right after
-attendance and announcements, before the review work: students work in Moodle
-for a while. Ray, 2026-10-13: "From now on when we do a review day lesson plan,
-it should explicitly include a time earlier in the class to do Moodle for a
-while."
+**Test practice is a Kahoot.** Before each exam Ray makes a Kahoot as part of
+the students' practice, and shares it with them on the first review day. Moodle
+is a resource only: Ray does not record its grade, and review-day plans carry
+no Moodle step. Ray, 2026-11-10. This replaces the 2026-10-13 rule that every
+review day plan had a Moodle step.
 
 **Link every material the plan names.** The link opens the source in Obsidian
 and prints as its label, so the PDF reads the same. A link to another guide

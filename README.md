@@ -100,6 +100,7 @@ command line skips extras.
 | `> ☕💻 ☐ …` | a teacher grading line: a note that opens with ☕ prints light grey, so students leave its boxes alone (physics DECISIONS #94) |
 | `**whole paragraph**` | bold lead line |
 | `- item` / `1. item` | bullet / numbered list |
+| `>> text` | indented 0.5 in; `>>>` for 1 in. A run of indented lines keeps together and with the line above it, so multiple-choice options are written `>> **A.** …`. `>> ![[thing.png]]` indents a picture the same way |
 | ` ``` ` fence | code block, monospace, boxed |
 | `![[thing.png]]` | picture, resolved against `images/` |
 | `![alt](images/thing.png)` | the same thing |

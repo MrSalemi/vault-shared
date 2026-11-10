@@ -107,6 +107,12 @@ function parse(src, vars = {}) {
 
     if (/^##\s+/.test(line)) { blocks.push(["h2", line.replace(/^##\s+/, "").trim()]); i++; continue; }
     if (/^#\s+/.test(line))  { blocks.push(["h1", line.replace(/^#\s+/, "").trim()]);  i++; continue; }
+    // An indented line: ">> text", one step in; ">>> text", two. Multiple-
+    // choice options are written this way: ">> **A.** ...". Obsidian shows it
+    // as a nested quote. Must come before the note rule, which would
+    // otherwise take the first ">".
+    const ind = line.match(/^(>{2,})\s?(.*)$/);
+    if (ind) { blocks.push(["indent", {level: ind[1].length - 1, text: ind[2].trim()}]); i++; continue; }
     if (/^>\s?/.test(line))  { blocks.push(["note", line.replace(/^>\s?/, "").trim()]); i++; continue; }
     if (/^-\s+/.test(line))  { flushList(/^-\s+/, "b"); continue; }
     if (/^\d+\.\s+/.test(line)) { flushList(/^\d+\.\s+/, "n"); continue; }
