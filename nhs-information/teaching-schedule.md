@@ -15,6 +15,7 @@ A standing fact. Present tense. If it becomes wrong, edit this file.
 - Print prep — physics
 - Work it by hand
 - What a lesson document creates
+- A new physics unit — its start project
 - Home or school
 - Print prep — engineering and robotics
 - Course lengths
@@ -334,6 +335,18 @@ here; it still needs printing under the print-prep rule above.
 Ray often edits a worksheet after it is printed and worked by hand. That edit is
 for next year's class, not this one — the printed stack and the scanned key
 stay as they are. Do not flag it as drift, and do not create a reprint task.
+
+## A new physics unit — its start project
+
+**A new unit in the sheet creates a Things project** from `[Template] New
+Physics Unit`, named like `Unit 03 Dynamics Start`. The template holds the
+unit-start tasks, the MagicSchool room among them. Copy every task and date
+each one for the school day before the first section's first lesson of the
+unit, unless the task says otherwise. Area School, all three physics tags.
+
+How to set up the MagicSchool room is in `physics/reference/magicschool.md`
+(physics DECISIONS #128). Ray, 2026-11-12: Unit 04 started with no start
+project, so nothing reminded him to set up its room.
 
 ## Home or school
 
